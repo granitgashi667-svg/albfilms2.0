@@ -2,9 +2,10 @@
 const API_KEY = '7a98db423d6e3a5ee922a3e51a09d135';
 const BASE = 'https://api.themoviedb.org/3';
 const IMG = 'https://image.tmdb.org/t/p/w500';
+const BACKDROP = 'https://image.tmdb.org/t/p/original';
 
 // Global state
-let currentType = 'movie';      // movie or tv
+let currentType = 'movie';
 let currentSort = 'top_rated';
 let currentGenre = null;
 let currentStudio = null;
@@ -12,6 +13,7 @@ let currentQuery = '';
 let currentPage = 1;
 let totalPages = 1;
 let isLoading = false;
+let isTurkishMode = false;  // for Turks TV Shows
 
 // LocalStorage lists
 let favorites = JSON.parse(localStorage.getItem('alb_favorites')) || [];
@@ -20,6 +22,7 @@ let continueWatching = JSON.parse(localStorage.getItem('alb_continue')) || [];
 
 function saveFav() { localStorage.setItem('alb_favorites', JSON.stringify(favorites)); }
 function saveWatch() { localStorage.setItem('alb_watchlist', JSON.stringify(watchlist)); }
+function saveContinue() { localStorage.setItem('alb_continue', JSON.stringify(continueWatching)); }
 
 // Helper fetch
 async function fetchAPI(endpoint, params = {}) {
@@ -47,6 +50,7 @@ async function loadGenresModal() {
             currentGenre = genre.id;
             currentStudio = null;
             currentQuery = '';
+            isTurkishMode = false;
             currentPage = 1;
             loadContent(true);
             document.getElementById('genreModal').style.display = 'none';
@@ -55,7 +59,7 @@ async function loadGenresModal() {
     });
 }
 
-// Load main content
+// Load content (movies or tv)
 async function loadContent(reset = true) {
     if (isLoading) return;
     isLoading = true;
@@ -67,15 +71,25 @@ async function loadContent(reset = true) {
     
     let endpoint = '';
     let params = { page: currentPage };
-    if (currentQuery) {
+    
+    // Turkish TV shows mode
+    if (isTurkishMode && currentType === 'tv') {
+        endpoint = '/discover/tv';
+        params.with_origin_country = 'TR';
+        params.sort_by = 'popularity.desc';
+        params['vote_count.gte'] = 10;
+    } 
+    else if (currentQuery && currentQuery.length >= 3) {
         endpoint = `/search/${currentType}`;
         params.query = currentQuery;
-    } else if (currentGenre) {
+    } 
+    else if (currentGenre) {
         endpoint = `/discover/${currentType}`;
         params.with_genres = currentGenre;
         params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
         if (currentSort === 'top_rated') params['vote_count.gte'] = 200;
-    } else if (currentStudio) {
+    } 
+    else if (currentStudio) {
         endpoint = `/discover/${currentType}`;
         if (currentStudio === 'Netflix') params.with_networks = '213';
         else if (currentStudio === 'Prime') params.with_companies = '174';
@@ -83,9 +97,11 @@ async function loadContent(reset = true) {
         else if (currentStudio === 'HBO') params.with_networks = '49';
         else if (currentStudio === 'Apple') params.with_companies = '2';
         params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
-    } else {
+    } 
+    else {
         endpoint = `/${currentType}/${currentSort === 'top_rated' ? 'top_rated' : 'popular'}`;
     }
+    
     const data = await fetchAPI(endpoint, params);
     totalPages = Math.min(data.total_pages, 200);
     displayGrid(data.results);
@@ -94,54 +110,139 @@ async function loadContent(reset = true) {
     document.getElementById('loadMoreBtn').style.display = (currentPage < totalPages) ? 'block' : 'none';
 }
 
-// Display grid with hover trailer
-async function displayGrid(items) {
+// Display grid with favorite/watchlater icons and hover popup
+function displayGrid(items) {
     const grid = document.getElementById('moviesGrid');
     for (let item of items) {
-        const card = document.createElement('div');
-        card.className = 'movie-card';
         const id = item.id;
         const title = item.title || item.name;
         const poster = item.poster_path ? IMG + item.poster_path : '';
         const rating = item.vote_average?.toFixed(1) || 'N/A';
+        const isFav = favorites.some(f => f.id == id && f.type === currentType);
+        const isWatch = watchlist.some(w => w.id == id && w.type === currentType);
+        
+        const card = document.createElement('div');
+        card.className = 'movie-card';
+        card.dataset.id = id;
+        card.dataset.type = currentType;
+        card.dataset.title = title;
+        card.dataset.poster = poster;
+        card.dataset.rating = rating;
+        card.dataset.overview = item.overview || '';
+        
         card.innerHTML = `
             <img loading="lazy" src="${poster}" alt="${title}">
-            <div class="trailer-preview" data-id="${id}" data-type="${currentType}">
-                <i class="fas fa-play-circle" style="font-size: 40px; color:#e50914;"></i>
+            <div class="card-actions">
+                <i class="fas fa-heart ${isFav ? 'active' : ''}" style="color: ${isFav ? '#e50914' : '#fff'};"></i>
+                <i class="fas fa-clock ${isWatch ? 'active' : ''}" style="color: ${isWatch ? '#ffaa00' : '#fff'};"></i>
             </div>
             <div class="card-info">
                 <h3>${title}</h3>
                 <p>⭐ ${rating}</p>
             </div>
         `;
+        
+        // Favorite click
+        const heart = card.querySelector('.fa-heart');
+        heart.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (favorites.some(f => f.id == id && f.type === currentType)) {
+                favorites = favorites.filter(f => !(f.id == id && f.type === currentType));
+                heart.style.color = '#fff';
+            } else {
+                favorites.push({ id, type: currentType, title, poster, rating, overview: item.overview });
+                heart.style.color = '#e50914';
+            }
+            saveFav();
+        });
+        
+        // Watch later click
+        const clock = card.querySelector('.fa-clock');
+        clock.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (watchlist.some(w => w.id == id && w.type === currentType)) {
+                watchlist = watchlist.filter(w => !(w.id == id && w.type === currentType));
+                clock.style.color = '#fff';
+            } else {
+                watchlist.push({ id, type: currentType, title, poster, rating, overview: item.overview });
+                clock.style.color = '#ffaa00';
+            }
+            saveWatch();
+        });
+        
+        // Click card -> go to watch/tv page
         card.addEventListener('click', (e) => {
-            if (e.target.closest('.trailer-preview')) return;
+            if (e.target.tagName === 'I') return;
             incrementClick(id, currentType);
             if (currentType === 'movie') window.location.href = `watch.html?id=${id}&type=movie`;
             else window.location.href = `tv.html?id=${id}`;
         });
-        // Hover trailer fetch
-        const trailerDiv = card.querySelector('.trailer-preview');
-        card.addEventListener('mouseenter', async () => {
-            const vId = trailerDiv.dataset.id;
-            const vType = trailerDiv.dataset.type;
-            if (!trailerDiv.dataset.trailerLoaded) {
-                const trailData = await fetchAPI(`/${vType}/${vId}/videos`);
-                const trailer = trailData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
-                if (trailer) {
-                    trailerDiv.style.background = `url(https://img.youtube.com/vi/${trailer.key}/mqdefault.jpg) center/cover`;
-                    trailerDiv.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${trailer.key}?autoplay=1&mute=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>`;
-                } else {
-                    trailerDiv.innerHTML = '<span style="color:white;">No trailer</span>';
-                }
-                trailerDiv.dataset.trailerLoaded = 'true';
-            }
+        
+        // Hover: show popup with trailer + description
+        card.addEventListener('mouseenter', async (e) => {
+            showHoverPopup(e, card, id, currentType);
         });
+        
         grid.appendChild(card);
     }
 }
 
-// Slider (6 most clicked last 24h)
+// Hover popup (trailer + description)
+let currentPopup = null;
+let popupTimeout = null;
+
+async function showHoverPopup(event, card, id, type) {
+    if (popupTimeout) clearTimeout(popupTimeout);
+    // Remove existing popup
+    if (currentPopup) currentPopup.remove();
+    
+    // Fetch trailer if not already fetched
+    let trailerKey = null;
+    const cached = card.dataset.trailerKey;
+    if (cached) {
+        trailerKey = cached;
+    } else {
+        const trailData = await fetchAPI(`/${type}/${id}/videos`);
+        const trailer = trailData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+        trailerKey = trailer ? trailer.key : null;
+        card.dataset.trailerKey = trailerKey || '';
+    }
+    
+    const title = card.dataset.title;
+    const overview = card.dataset.overview?.substring(0, 150) || 'No description';
+    const rating = card.dataset.rating;
+    
+    const popup = document.createElement('div');
+    popup.className = 'hover-popup';
+    popup.style.opacity = '0';
+    popup.innerHTML = `
+        <div style="position:relative;">
+            ${trailerKey ? `<iframe src="https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>` : '<div style="height:120px; background:#000; display:flex; align-items:center; justify-content:center;">No trailer</div>'}
+            <div class="popup-title">${title}</div>
+            <div class="popup-desc">${overview}... <br>⭐ ${rating}/10</div>
+        </div>
+    `;
+    document.body.appendChild(popup);
+    currentPopup = popup;
+    
+    // Position near cursor
+    const updatePosition = (e) => {
+        popup.style.left = (e.clientX + 20) + 'px';
+        popup.style.top = (e.clientY - 100) + 'px';
+        popup.style.opacity = '1';
+    };
+    updatePosition(event);
+    card.addEventListener('mousemove', updatePosition);
+    card.addEventListener('mouseleave', () => {
+        if (popupTimeout) clearTimeout(popupTimeout);
+        popupTimeout = setTimeout(() => {
+            if (popup) popup.remove();
+            card.removeEventListener('mousemove', updatePosition);
+        }, 300);
+    });
+}
+
+// Slider (most clicked last 24h)
 async function renderSlider() {
     const stats = JSON.parse(localStorage.getItem('clickStats')) || {};
     const entries = Object.entries(stats).map(([key, val]) => ({ key, count: val.clicks?.filter(t => t > Date.now() - 86400000).length || 0 }));
@@ -160,7 +261,7 @@ async function renderSlider() {
                 <img src="${IMG + data.poster_path}" loading="lazy">
                 <div class="slider-info">
                     <h4>${data.title || data.name}</h4>
-                    <p>${data.overview?.substring(0, 80) || 'No description'}...</p>
+                    <p>${(data.overview || '').substring(0, 80)}...</p>
                 </div>
             `;
             card.onclick = () => {
@@ -170,7 +271,7 @@ async function renderSlider() {
             track.appendChild(card);
         }
     }
-    // If less than 6, fill with popular
+    // If less than 6, fill with popular of current type
     if (top6.length < 6) {
         const fallback = await fetchAPI(`/${currentType}/popular`, { page: 1 });
         for (let i = 0; i < 6 - top6.length && i < fallback.results.length; i++) {
@@ -234,7 +335,24 @@ async function loadGreats() {
     }
 }
 
-// Slider horizontal drag & buttons
+// Load Turkish TV shows
+async function loadTurkishTV() {
+    isTurkishMode = true;
+    currentGenre = null;
+    currentStudio = null;
+    currentQuery = '';
+    currentType = 'tv';
+    currentPage = 1;
+    await loadContent(true);
+    document.getElementById('sectionTitle').innerText = 'Turkish TV Series';
+    // Also update active tab in UI
+    document.querySelectorAll('.filter-tab').forEach(btn => {
+        if (btn.dataset.type === 'tv') btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+}
+
+// Slider drag & buttons
 function initSliderControls() {
     const track = document.querySelector('.slider-track');
     if (!track) return;
@@ -249,7 +367,7 @@ function initSliderControls() {
     if (nextBtn) nextBtn.onclick = () => { track.scrollBy({ left: 300, behavior: 'smooth' }); };
 }
 
-// Event listeners for filters, studios, etc.
+// Bind all events
 function bindEvents() {
     // Filter tabs (Movies/TV)
     document.querySelectorAll('.filter-tab').forEach(btn => {
@@ -257,6 +375,7 @@ function bindEvents() {
             document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentType = btn.dataset.type;
+            isTurkishMode = false;
             currentPage = 1;
             currentGenre = null;
             currentStudio = null;
@@ -264,7 +383,7 @@ function bindEvents() {
             document.getElementById('searchInput').value = '';
             loadContent(true);
             document.getElementById('sectionTitle').innerText = currentType === 'movie' ? 'Top Rated Movies' : 'Top Rated TV Series';
-            renderSlider(); // refresh slider for type
+            renderSlider();
         };
     });
     // Sort buttons
@@ -283,18 +402,30 @@ function bindEvents() {
             currentStudio = btn.dataset.studio;
             currentGenre = null;
             currentQuery = '';
+            isTurkishMode = false;
             currentPage = 1;
             loadContent(true);
         };
     });
-    // Search
-    document.getElementById('searchInput')?.addEventListener('input', debounce((e) => {
-        currentQuery = e.target.value;
-        currentGenre = null;
-        currentStudio = null;
-        currentPage = 1;
-        loadContent(true);
-    }, 500));
+    // Search input with min 3 chars
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce((e) => {
+            const val = e.target.value.trim();
+            if (val.length >= 3) {
+                currentQuery = val;
+                currentGenre = null;
+                currentStudio = null;
+                isTurkishMode = false;
+                currentPage = 1;
+                loadContent(true);
+            } else if (val.length === 0) {
+                currentQuery = '';
+                currentPage = 1;
+                loadContent(true);
+            }
+        }, 500));
+    }
     // Load more
     document.getElementById('loadMoreBtn')?.addEventListener('click', () => {
         currentPage++;
@@ -304,7 +435,7 @@ function bindEvents() {
     document.getElementById('menuToggle')?.addEventListener('click', () => {
         document.getElementById('sidebar').classList.toggle('open');
     });
-    // Modal
+    // Modal genres
     document.getElementById('openGenresBtn')?.addEventListener('click', () => {
         document.getElementById('genreModal').style.display = 'flex';
     });
@@ -321,8 +452,16 @@ function bindEvents() {
         currentSort = 'top_rated';
         currentGenre = null;
         currentStudio = null;
+        currentQuery = '';
+        isTurkishMode = false;
         currentPage = 1;
         loadContent(true);
+        document.getElementById('sectionTitle').innerText = 'Top Rated Movies';
+        // Update active filter tab
+        document.querySelectorAll('.filter-tab').forEach(btn => {
+            if (btn.dataset.type === 'movie') btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
     });
     document.getElementById('topTvLink')?.addEventListener('click', (e) => {
         e.preventDefault();
@@ -330,35 +469,20 @@ function bindEvents() {
         currentSort = 'top_rated';
         currentGenre = null;
         currentStudio = null;
+        currentQuery = '';
+        isTurkishMode = false;
         currentPage = 1;
         loadContent(true);
-    });
-    // List sidebar (show favorites, watchlater)
-    document.querySelectorAll('[data-list]').forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const listName = link.dataset.list;
-            let items = [];
-            if (listName === 'favorites') items = JSON.parse(localStorage.getItem('alb_favorites')) || [];
-            else if (listName === 'watchlater') items = JSON.parse(localStorage.getItem('alb_watchlist')) || [];
-            else if (listName === 'continue') items = JSON.parse(localStorage.getItem('alb_continue')) || [];
-            displayUserList(items);
+        document.getElementById('sectionTitle').innerText = 'Top Rated TV Series';
+        document.querySelectorAll('.filter-tab').forEach(btn => {
+            if (btn.dataset.type === 'tv') btn.classList.add('active');
+            else btn.classList.remove('active');
         });
     });
-}
-
-function displayUserList(items) {
-    const grid = document.getElementById('moviesGrid');
-    grid.innerHTML = '';
-    items.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'movie-card';
-        card.innerHTML = `<img src="${item.poster || ''}"><div class="card-info"><h3>${item.title}</h3></div>`;
-        card.onclick = () => {
-            if (item.type === 'movie') location.href = `watch.html?id=${item.id}&type=movie`;
-            else location.href = `tv.html?id=${item.id}`;
-        };
-        grid.appendChild(card);
+    // Turks TV link
+    document.getElementById('turksTvLink')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        loadTurkishTV();
     });
 }
 
