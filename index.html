@@ -31,7 +31,7 @@
                 <button data-studio="Netflix"><i class="fab fa-netflix"></i> Netflix</button>
                 <button data-studio="Prime"><i class="fab fa-amazon"></i> Prime</button>
                 <button data-studio="Disney"><i class="fab fa-disney"></i> Disney+</button>
-                <button data-studio="HBO"><i class="fas fa-tv"></i> HBO</button>
+                <button data-studio="HBO"><i class="fab fa-hbo"></i> HBO</button>
                 <button data-studio="Apple"><i class="fab fa-apple"></i> Apple TV+</button>
             </div>
         </div>
@@ -43,6 +43,7 @@
             <h4><i class="fas fa-trophy"></i> Top Lists</h4>
             <a href="#" id="topMoviesLink"><i class="fas fa-film"></i> 100 Greatest Movies</a>
             <a href="#" id="topTvLink"><i class="fas fa-tv"></i> 100 Greatest TV Shows</a>
+            <a href="#" id="turksTvLink"><i class="fas fa-flag-turkey"></i> Turks TV Shows</a>
         </div>
         <div class="sidebar-footer">
             <p>© 2025 ALBFILMS24</p>
@@ -54,11 +55,11 @@
             <button id="menuToggle" class="menu-icon"><i class="fas fa-bars"></i></button>
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Search 5000+ movies, 1000+ series...">
+                <input type="text" id="searchInput" placeholder="Search TV Series/Movies">
             </div>
             <div class="filter-tabs">
                 <button class="filter-tab active" data-type="movie">Movies</button>
-                <button class="filter-tab" data-type="tv">TV Series</button>
+                <button class="filter-tab" data-type="tv">TV Shows</button>
             </div>
             <div class="sort-buttons">
                 <button class="sort-btn" data-sort="popular">Popular</button>
@@ -66,9 +67,8 @@
             </div>
         </div>
 
-        <!-- Slider me 6 filmat/serialet me te klikuar -->
         <section class="slider-section">
-            <h2><i class="fas fa-chart-line"></i> Trending Now 🔥</h2>
+            <h2><i class="fas fa-chart-line"></i> Trending Now</h2>
             <div class="slider-container">
                 <button class="slider-nav prev"><i class="fas fa-chevron-left"></i></button>
                 <div class="slider-track" id="sliderTrack"></div>
@@ -76,7 +76,6 @@
             </div>
         </section>
 
-        <!-- 100 Greatest Movies & TV Shows -->
         <div class="greats-row">
             <div class="greats-section">
                 <h3>🏆 100 Greatest Movies</h3>
@@ -88,7 +87,6 @@
             </div>
         </div>
 
-        <!-- Main dynamic grid -->
         <div class="content-header">
             <h2 id="sectionTitle">Top Rated Movies</h2>
         </div>
@@ -98,7 +96,6 @@
     </main>
 </div>
 
-<!-- Modal per Genre -->
 <div id="genreModal" class="modal">
     <div class="modal-content">
         <span class="close-modal">&times;</span>
@@ -109,7 +106,6 @@
 
 <script src="main.js"></script>
 <script>
-    // Initialize movies page
     window.currentPageType = 'movie';
     initIndexPage();
 </script>
