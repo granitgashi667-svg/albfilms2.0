@@ -13,7 +13,7 @@ let currentQuery = '';
 let currentPage = 1;
 let totalPages = 1;
 let isLoading = false;
-let isTurkishMode = false;  // for Turks TV Shows
+let isTurkishMode = false;
 
 // LocalStorage lists
 let favorites = JSON.parse(localStorage.getItem('alb_favorites')) || [];
@@ -72,7 +72,6 @@ async function loadContent(reset = true) {
     let endpoint = '';
     let params = { page: currentPage };
     
-    // Turkish TV shows mode
     if (isTurkishMode && currentType === 'tv') {
         endpoint = '/discover/tv';
         params.with_origin_country = 'TR';
@@ -133,8 +132,8 @@ function displayGrid(items) {
         card.innerHTML = `
             <img loading="lazy" src="${poster}" alt="${title}">
             <div class="card-actions">
-                <i class="fas fa-heart ${isFav ? 'active' : ''}" style="color: ${isFav ? '#e50914' : '#fff'};"></i>
-                <i class="fas fa-clock ${isWatch ? 'active' : ''}" style="color: ${isWatch ? '#ffaa00' : '#fff'};"></i>
+                <i class="fas fa-heart" style="color: ${isFav ? '#e50914' : '#fff'};"></i>
+                <i class="fas fa-clock" style="color: ${isWatch ? '#ffaa00' : '#fff'};"></i>
             </div>
             <div class="card-info">
                 <h3>${title}</h3>
@@ -178,67 +177,58 @@ function displayGrid(items) {
             else window.location.href = `tv.html?id=${id}`;
         });
         
-        // Hover: show popup with trailer + description
-        card.addEventListener('mouseenter', async (e) => {
-            showHoverPopup(e, card, id, currentType);
+        // Hover popup
+        let popupTimeout;
+        card.addEventListener('mouseenter', (e) => {
+            if (popupTimeout) clearTimeout(popupTimeout);
+            showHoverPopup(card, id, currentType, e);
+        });
+        card.addEventListener('mouseleave', () => {
+            popupTimeout = setTimeout(() => {
+                const popup = document.getElementById('hoverPopup');
+                if (popup) popup.style.display = 'none';
+            }, 200);
         });
         
         grid.appendChild(card);
     }
 }
 
-// Hover popup (trailer + description)
-let currentPopup = null;
-let popupTimeout = null;
-
-async function showHoverPopup(event, card, id, type) {
-    if (popupTimeout) clearTimeout(popupTimeout);
-    // Remove existing popup
-    if (currentPopup) currentPopup.remove();
+// Show hover popup with trailer and description
+let trailerCache = {};
+async function showHoverPopup(card, id, type, event) {
+    const popup = document.getElementById('hoverPopup');
+    if (!popup) return;
     
-    // Fetch trailer if not already fetched
-    let trailerKey = null;
-    const cached = card.dataset.trailerKey;
-    if (cached) {
-        trailerKey = cached;
-    } else {
+    // Get or fetch trailer
+    let trailerKey = trailerCache[`${type}_${id}`];
+    if (!trailerKey) {
         const trailData = await fetchAPI(`/${type}/${id}/videos`);
         const trailer = trailData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
         trailerKey = trailer ? trailer.key : null;
-        card.dataset.trailerKey = trailerKey || '';
+        trailerCache[`${type}_${id}`] = trailerKey;
     }
     
     const title = card.dataset.title;
     const overview = card.dataset.overview?.substring(0, 150) || 'No description';
     const rating = card.dataset.rating;
     
-    const popup = document.createElement('div');
-    popup.className = 'hover-popup';
-    popup.style.opacity = '0';
     popup.innerHTML = `
-        <div style="position:relative;">
-            ${trailerKey ? `<iframe src="https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>` : '<div style="height:120px; background:#000; display:flex; align-items:center; justify-content:center;">No trailer</div>'}
-            <div class="popup-title">${title}</div>
-            <div class="popup-desc">${overview}... <br>⭐ ${rating}/10</div>
-        </div>
+        <div id="popupTrailer">${trailerKey ? `<iframe src="https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>` : '<div style="height:120px; background:#000; display:flex; align-items:center; justify-content:center;">No trailer</div>'}</div>
+        <div class="popup-title">${title}</div>
+        <div class="popup-desc">${overview}... <br>⭐ ${rating}/10</div>
     `;
-    document.body.appendChild(popup);
-    currentPopup = popup;
+    popup.style.display = 'block';
     
     // Position near cursor
-    const updatePosition = (e) => {
+    const updatePos = (e) => {
         popup.style.left = (e.clientX + 20) + 'px';
         popup.style.top = (e.clientY - 100) + 'px';
-        popup.style.opacity = '1';
     };
-    updatePosition(event);
-    card.addEventListener('mousemove', updatePosition);
+    updatePos(event);
+    card.addEventListener('mousemove', updatePos);
     card.addEventListener('mouseleave', () => {
-        if (popupTimeout) clearTimeout(popupTimeout);
-        popupTimeout = setTimeout(() => {
-            if (popup) popup.remove();
-            card.removeEventListener('mousemove', updatePosition);
-        }, 300);
+        card.removeEventListener('mousemove', updatePos);
     });
 }
 
@@ -271,7 +261,6 @@ async function renderSlider() {
             track.appendChild(card);
         }
     }
-    // If less than 6, fill with popular of current type
     if (top6.length < 6) {
         const fallback = await fetchAPI(`/${currentType}/popular`, { page: 1 });
         for (let i = 0; i < 6 - top6.length && i < fallback.results.length; i++) {
@@ -288,7 +277,6 @@ async function renderSlider() {
     }
 }
 
-// Increment click for slider
 function incrementClick(id, type) {
     let stats = JSON.parse(localStorage.getItem('clickStats')) || {};
     const key = `${type}_${id}`;
@@ -345,7 +333,6 @@ async function loadTurkishTV() {
     currentPage = 1;
     await loadContent(true);
     document.getElementById('sectionTitle').innerText = 'Turkish TV Series';
-    // Also update active tab in UI
     document.querySelectorAll('.filter-tab').forEach(btn => {
         if (btn.dataset.type === 'tv') btn.classList.add('active');
         else btn.classList.remove('active');
@@ -367,7 +354,7 @@ function initSliderControls() {
     if (nextBtn) nextBtn.onclick = () => { track.scrollBy({ left: 300, behavior: 'smooth' }); };
 }
 
-// Bind all events
+// Bind all events (including sidebar links)
 function bindEvents() {
     // Filter tabs (Movies/TV)
     document.querySelectorAll('.filter-tab').forEach(btn => {
@@ -397,7 +384,7 @@ function bindEvents() {
         };
     });
     // Studio buttons
-    document.querySelectorAll('[data-studio]').forEach(btn => {
+    document.querySelectorAll('.studio-btn').forEach(btn => {
         btn.onclick = () => {
             currentStudio = btn.dataset.studio;
             currentGenre = null;
@@ -407,7 +394,7 @@ function bindEvents() {
             loadContent(true);
         };
     });
-    // Search input with min 3 chars
+    // Search input
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('input', debounce((e) => {
@@ -445,7 +432,7 @@ function bindEvents() {
     window.onclick = (e) => {
         if (e.target === document.getElementById('genreModal')) document.getElementById('genreModal').style.display = 'none';
     };
-    // Top lists links
+    // Top lists links (sidebar)
     document.getElementById('topMoviesLink')?.addEventListener('click', (e) => {
         e.preventDefault();
         currentType = 'movie';
@@ -457,7 +444,6 @@ function bindEvents() {
         currentPage = 1;
         loadContent(true);
         document.getElementById('sectionTitle').innerText = 'Top Rated Movies';
-        // Update active filter tab
         document.querySelectorAll('.filter-tab').forEach(btn => {
             if (btn.dataset.type === 'movie') btn.classList.add('active');
             else btn.classList.remove('active');
@@ -479,11 +465,38 @@ function bindEvents() {
             else btn.classList.remove('active');
         });
     });
-    // Turks TV link
     document.getElementById('turksTvLink')?.addEventListener('click', (e) => {
         e.preventDefault();
         loadTurkishTV();
     });
+    // Sidebar lists (Favorites, Watch Later, Continue Watching)
+    document.querySelectorAll('.sidebar-link[data-list]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const listName = link.dataset.list;
+            let items = [];
+            if (listName === 'favorites') items = favorites;
+            else if (listName === 'watchlater') items = watchlist;
+            else if (listName === 'continue') items = continueWatching;
+            displayUserList(items);
+        });
+    });
+}
+
+function displayUserList(items) {
+    const grid = document.getElementById('moviesGrid');
+    grid.innerHTML = '';
+    items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'movie-card';
+        card.innerHTML = `<img src="${item.poster || ''}"><div class="card-info"><h3>${item.title}</h3></div>`;
+        card.onclick = () => {
+            if (item.type === 'movie') location.href = `watch.html?id=${item.id}&type=movie`;
+            else location.href = `tv.html?id=${item.id}`;
+        };
+        grid.appendChild(card);
+    });
+    document.getElementById('sectionTitle').innerText = 'My List';
 }
 
 function debounce(fn, delay) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); }; }
