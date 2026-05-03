@@ -334,7 +334,7 @@ body {
 /* Main grid */
 .movies-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 25px;
     margin: 30px 0;
 }
@@ -351,7 +351,7 @@ body {
 
 .movie-card img {
     width: 100%;
-    height: 260px;
+    height: 280px;
     object-fit: cover;
 }
 
@@ -360,31 +360,92 @@ body {
     border-color: #e50914;
 }
 
-.trailer-preview {
+/* Action icons on card */
+.card-actions {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 260px;
-    background: black;
-    display: none;
-    align-items: center;
-    justify-content: center;
-}
-
-.movie-card:hover .trailer-preview {
+    top: 10px;
+    right: 10px;
     display: flex;
+    gap: 10px;
+    z-index: 10;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    border-radius: 30px;
+    padding: 5px 8px;
 }
 
-.card-info {
-    padding: 12px;
+.card-actions i {
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: 0.2s;
 }
 
-.card-info h3 {
-    font-size: 0.85rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.card-actions .fa-heart:hover, .card-actions .fa-clock:hover {
+    transform: scale(1.2);
+}
+
+.card-actions .fa-heart {
+    color: #ff4d4d;
+}
+
+.card-actions .fa-clock {
+    color: #ffaa00;
+}
+
+/* Hover trailer popup */
+.hover-popup {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    max-width: 400px;
+    background: #0a0a10;
+    border-radius: 20px;
+    padding: 15px;
+    z-index: 300;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    border-left: 4px solid #e50914;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.hover-popup iframe {
+    width: 100%;
+    height: 200px;
+    border-radius: 12px;
+}
+
+.hover-popup .popup-title {
+    font-weight: bold;
+    margin-top: 8px;
+}
+
+.hover-popup .popup-desc {
+    font-size: 0.8rem;
+    color: #ccc;
+    margin-top: 5px;
+}
+
+/* Loader etc */
+.loader {
+    text-align: center;
+    padding: 20px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #333;
+    border-top: 3px solid #e50914;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(360deg); }
 }
 
 .load-more {
@@ -455,19 +516,6 @@ body {
     cursor: pointer;
 }
 
-/* Loader */
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #333;
-    border-top: 3px solid #e50914;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 20px auto;
-}
-
-@keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
-
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar {
@@ -491,5 +539,12 @@ body {
     }
     .great-card {
         min-width: 110px;
+    }
+    .movies-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+    }
+    .movie-card img {
+        height: 220px;
     }
 }
