@@ -4,314 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ALBFILMS24 - TV Series Player</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            background: #0a0a0f;
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: -1;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 30px 20px;
-        }
-        .nav-bar {
-            display: flex;
-            justify-content: flex-start;
-            margin-bottom: 30px;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        .back-btn {
-            background: rgba(30, 30, 40, 0.8);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.15);
-            padding: 10px 24px;
-            border-radius: 40px;
-            color: white;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .back-btn:hover {
-            background: #e50914;
-            transform: translateX(-3px);
-        }
-        .series-hero {
-            display: flex;
-            gap: 40px;
-            flex-wrap: wrap;
-            background: rgba(20, 20, 30, 0.7);
-            backdrop-filter: blur(12px);
-            border-radius: 28px;
-            padding: 30px;
-            margin-bottom: 40px;
-            border-left: 5px solid #e50914;
-        }
-        .poster img {
-            width: 260px;
-            border-radius: 20px;
-        }
-        .details {
-            flex: 1;
-        }
-        .title {
-            font-size: 40px;
-            font-weight: 800;
-            margin-bottom: 16px;
-            background: linear-gradient(135deg, #fff, #e50914);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        .meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px;
-            margin-bottom: 24px;
-        }
-        .meta span {
-            background: #1e2026;
-            padding: 6px 16px;
-            border-radius: 40px;
-        }
-        .overview {
-            margin-bottom: 24px;
-            line-height: 1.6;
-            color: #ddd;
-        }
-        .season-selector {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin: 30px 0 20px;
-        }
-        .season-btn {
-            background: #1e2026;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            color: #ccc;
-            cursor: pointer;
-        }
-        .season-btn.active, .season-btn:hover {
-            background: #e50914;
-            color: white;
-        }
-        .servers {
-            display: flex;
-            gap: 12px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        .server-btn {
-            background: #1e2026;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            color: #ccc;
-            cursor: pointer;
-        }
-        .server-btn.active, .server-btn:hover {
-            background: #e50914;
-            color: white;
-        }
-        .episodes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 16px;
-            margin: 20px 0;
-        }
-        .episode-card {
-            background: #1a1c24;
-            border-radius: 16px;
-            padding: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .episode-card:hover {
-            background: #e50914;
-        }
-        .player-wrapper {
-            margin-top: 30px;
-            border-radius: 24px;
-            overflow: hidden;
-            background: #000;
-        }
-        iframe {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            border: none;
-        }
-        @media (max-width: 700px) {
-            .poster img { width: 160px; }
-            .title { font-size: 28px; }
-        }
+        body { background:#0a0a0f; color:#fff; font-family:'Inter',sans-serif; }
+        .container { max-width:1200px; margin:0 auto; padding:20px; }
+        .back-btn { background:#1e2026; border:none; padding:10px 24px; border-radius:40px; color:white; cursor:pointer; margin-bottom:20px; }
+        .series-hero { display:flex; gap:30px; background:rgba(20,20,30,0.7); border-radius:28px; padding:25px; margin-bottom:30px; flex-wrap:wrap; }
+        .poster img { width:200px; border-radius:16px; }
+        .title { font-size:32px; font-weight:800; background:linear-gradient(135deg,#fff,#e50914); -webkit-background-clip:text; background-clip:text; color:transparent; }
+        .season-selector, .servers { display:flex; gap:12px; margin:20px 0; flex-wrap:wrap; }
+        .season-btn, .server-btn { background:#1e2026; border:none; padding:8px 20px; border-radius:40px; color:#ccc; cursor:pointer; }
+        .season-btn.active, .server-btn.active, .season-btn:hover, .server-btn:hover { background:#e50914; color:white; }
+        .episodes-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; margin:20px 0; }
+        .episode-card { background:#1a1c24; border-radius:16px; padding:12px; display:flex; justify-content:space-between; cursor:pointer; }
+        .episode-card:hover { background:#e50914; }
+        .player-wrapper { border-radius:24px; overflow:hidden; background:#000; margin-top:20px; }
+        iframe { width:100%; aspect-ratio:16/9; border:none; }
     </style>
 </head>
 <body>
 <div class="container">
-    <div class="nav-bar">
-        <button class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i> Back</button>
-    </div>
+    <button class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i> Back</button>
     <div id="info" class="series-hero"></div>
-    
     <div id="seasonsContainer" class="season-selector"></div>
     <div class="servers" id="serverList"></div>
     <div id="episodesContainer" class="episodes-grid"></div>
-    
-    <div id="playerContainer" class="player-wrapper" style="display: none;">
-        <iframe id="player" allowfullscreen allow="autoplay; fullscreen"></iframe>
-    </div>
+    <div id="playerContainer" class="player-wrapper" style="display:none;"><iframe id="player" allowfullscreen></iframe></div>
 </div>
-
 <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const tvId = urlParams.get('id');
+    const tvId = new URLSearchParams(location.search).get('id');
     const API_KEY = '7a98db423d6e3a5ee922a3e51a09d135';
     const IMG = 'https://image.tmdb.org/t/p/w500';
-    const BACKDROP = 'https://image.tmdb.org/t/p/original';
-
-    let tvData = null;
-    let currentSeason = 1;
-    let currentServer = 'vidsrc';   // default
-
-    // Serverët e njëjtë si në watch.html
+    let currentSeason = 1, currentServer = 'vidsrc';
     const servers = {
-        vidsrc: {
-            name: 'Server 1',
-            getUrl: (id, season, episode) => `https://vidsrcme.ru/embed/tv/${id}/${season}/${episode}`
-        },
-        multiembed: {
-            name: 'Server 2 (AirPlay)',
-            getUrl: (id, season, episode) => `https://multiembed.mov/?video_id=${id}&tmdb=1&tv=1&season=${season}&episode=${episode}`
-        },
-        embed2: {
-            name: 'Server 3',
-            getUrl: (id, season, episode) => `https://www.2embed.cc/embedtv/${id}&season=${season}&episode=${episode}`
-        }
+        vidsrc: { name: 'Server 1', getUrl: (s,e) => `https://vidsrcme.ru/embed/tv/${tvId}/${s}/${e}` },
+        multiembed: { name: 'Server 2', getUrl: (s,e) => `https://multiembed.mov/?video_id=${tvId}&tmdb=1&tv=1&season=${s}&episode=${e}` },
+        embed2: { name: 'Server 3', getUrl: (s,e) => `https://www.2embed.cc/embedtv/${tvId}&season=${s}&episode=${e}` }
     };
-
-    async function loadTVDetails() {
-        if (!tvId) return;
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}?api_key=${API_KEY}&language=en-US`);
-        tvData = await res.json();
-        if (tvData.backdrop_path) document.body.style.backgroundImage = `url('${BACKDROP + tvData.backdrop_path}')`;
-        document.getElementById('info').innerHTML = `
-            <div class="poster"><img src="${tvData.poster_path ? IMG+tvData.poster_path : ''}"></div>
-            <div class="details">
-                <div class="title">${tvData.name}</div>
-                <div class="meta">
-                    <span><i class="fas fa-calendar"></i> ${tvData.first_air_date?.split('-')[0]}</span>
-                    <span><i class="fas fa-star"></i> ${tvData.vote_average?.toFixed(1)}</span>
-                    <span><i class="fas fa-tv"></i> ${tvData.number_of_seasons} Seasons</span>
-                </div>
-                <div class="overview">${tvData.overview || 'No description'}</div>
-            </div>
-        `;
-        loadSeasons();
-        buildServerButtons();
-    }
-
-    function buildServerButtons() {
-        const container = document.getElementById('serverList');
-        container.innerHTML = '';
-        Object.keys(servers).forEach(key => {
-            const btn = document.createElement('button');
-            btn.textContent = servers[key].name;
-            btn.className = `server-btn ${key === currentServer ? 'active' : ''}`;
-            btn.onclick = () => {
-                currentServer = key;
-                document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                // Nëse një episod është duke u luajtur, rifresko
-                const activeEpisode = document.querySelector('.episode-card.active-ep');
-                if (activeEpisode && activeEpisode.dataset.season && activeEpisode.dataset.episode) {
-                    playEpisode(parseInt(activeEpisode.dataset.season), parseInt(activeEpisode.dataset.episode));
-                }
-            };
-            container.appendChild(btn);
-        });
-    }
-
-    function loadSeasons() {
+    async function loadTV() {
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}?api_key=${API_KEY}`);
+        const data = await res.json();
+        document.getElementById('info').innerHTML = `<div class="poster"><img src="${IMG+data.poster_path}"></div><div><div class="title">${data.name}</div><p>${data.overview}</p><p>⭐ ${data.vote_average}</p></div>`;
+        const seasons = data.seasons.filter(s=>s.season_number>0);
         const seasonsDiv = document.getElementById('seasonsContainer');
-        seasonsDiv.innerHTML = '';
-        const seasons = tvData.seasons.filter(s => s.season_number > 0);
-        seasons.forEach(season => {
-            const btn = document.createElement('button');
-            btn.textContent = `Season ${season.season_number}`;
-            btn.className = 'season-btn';
-            if (currentSeason === season.season_number) btn.classList.add('active');
-            btn.onclick = () => {
-                currentSeason = season.season_number;
-                document.querySelectorAll('.season-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                loadEpisodes(currentSeason);
-            };
-            seasonsDiv.appendChild(btn);
-        });
-        if (seasons.length) loadEpisodes(seasons[0].season_number);
+        seasons.forEach(s=>{ const btn=document.createElement('button'); btn.textContent=`Season ${s.season_number}`; btn.className='season-btn'; btn.onclick=()=>{ currentSeason=s.season_number; document.querySelectorAll('.season-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); loadEpisodes(currentSeason); }; seasonsDiv.appendChild(btn); });
+        if(seasons.length) loadEpisodes(seasons[0].season_number);
+        const serverDiv = document.getElementById('serverList');
+        Object.keys(servers).forEach(key=>{ const btn=document.createElement('button'); btn.textContent=servers[key].name; btn.className='server-btn'; btn.onclick=()=>{ currentServer=key; document.querySelectorAll('.server-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }; serverDiv.appendChild(btn); });
     }
-
-    async function loadEpisodes(seasonNum) {
-        const episodesDiv = document.getElementById('episodesContainer');
-        episodesDiv.innerHTML = '<div>Loading episodes...</div>';
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNum}?api_key=${API_KEY}&language=en-US`);
-        const seasonData = await res.json();
-        episodesDiv.innerHTML = '';
-        seasonData.episodes.forEach(ep => {
+    async function loadEpisodes(season) {
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${season}?api_key=${API_KEY}`);
+        const data = await res.json();
+        const cont = document.getElementById('episodesContainer');
+        cont.innerHTML = '';
+        data.episodes.forEach(ep=>{
             const card = document.createElement('div');
             card.className = 'episode-card';
-            card.dataset.season = seasonNum;
-            card.dataset.episode = ep.episode_number;
-            card.innerHTML = `
-                <span class="episode-number">E${ep.episode_number}</span>
-                <span class="episode-title">${ep.name}</span>
-                <i class="fas fa-play-circle"></i>
-            `;
-            card.onclick = () => {
-                document.querySelectorAll('.episode-card').forEach(c => c.classList.remove('active-ep'));
-                card.classList.add('active-ep');
-                playEpisode(seasonNum, ep.episode_number);
-            };
-            episodesDiv.appendChild(card);
+            card.innerHTML = `<span>E${ep.episode_number}</span><span>${ep.name}</span><i class="fas fa-play"></i>`;
+            card.onclick = () => { document.getElementById('player').src = servers[currentServer].getUrl(season, ep.episode_number); document.getElementById('playerContainer').style.display='block'; };
+            cont.appendChild(card);
         });
     }
-
-    function playEpisode(season, episode) {
-        const playerContainer = document.getElementById('playerContainer');
-        const player = document.getElementById('player');
-        const embedUrl = servers[currentServer].getUrl(tvId, season, episode);
-        player.src = embedUrl;
-        playerContainer.style.display = 'block';
-        playerContainer.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    loadTVDetails();
+    loadTV();
 </script>
 </body>
 </html>
