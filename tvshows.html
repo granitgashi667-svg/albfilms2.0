@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Series Details - ALBFILMS24</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"><!-- same sidebar structure will be injected by JS or static, but we copy same as above for simplicity --></aside>
+    <main class="main-content">
+      <div class="header"><button id="menu-toggle" class="menu-icon"><i class="fas fa-bars"></i></button><a href="tv.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to TV</a></div>
+      <div id="tv-detail-container">
+        <!-- Dynamic content: series info, seasons, episodes -->
+      </div>
+    </main>
+  </div>
+  <script src="main.js"></script>
+  <script>
+    window.currentPage = 'tvshows';
+    initTVShowDetail();
+  </script>
+</body>
+</html>
