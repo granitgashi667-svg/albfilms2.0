@@ -1,91 +1,690 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>ALBFILMS24 – Movies & Series</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ALBFILMS24 – Movies & Series</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: #0a0a0f;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100%;
+            background: rgba(8, 8, 12, 0.98);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255,255,255,0.08);
+            z-index: 200;
+            overflow-y: auto;
+            padding: 24px 16px;
+            transition: transform 0.3s ease;
+        }
+        .sidebar .logo h2 {
+            font-size: 1.9rem;
+            background: linear-gradient(135deg, #fff, #e50914);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 30px;
+        }
+        .sidebar-section {
+            margin: 24px 0;
+        }
+        .sidebar-section h4 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #aaa;
+            margin-bottom: 12px;
+            padding-left: 8px;
+        }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            color: #ccc;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: 0.2s;
+            margin: 4px 0;
+            cursor: pointer;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: rgba(229, 9, 20, 0.2);
+            color: #e50914;
+        }
+        .genres-trigger {
+            background: #1e1e2a;
+            justify-content: center;
+            font-weight: 600;
+        }
+        .studio-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .studio-row a {
+            background: #1e1e2a;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin: 0;
+        }
+        /* ========== MODAL PER GENRES ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #12121a;
+            border-radius: 28px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .modal-content h3 {
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        .genre-grid-modal {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .genre-grid-modal button {
+            background: #1e1e2a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .genre-grid-modal button:hover {
+            background: #e50914;
+        }
+        .close-modal {
+            float: right;
+            font-size: 28px;
+            cursor: pointer;
+            color: #aaa;
+        }
+        /* ========== MAIN ========== */
+        .main-content {
+            margin-left: 280px;
+            padding: 20px 30px;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+        }
+        .search-box {
+            background: #1e1e2a;
+            border-radius: 60px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            max-width: 400px;
+        }
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            width: 100%;
+            outline: none;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .filter-btn, .sort-btn {
+            background: #1e1e2a;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #ccc;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .filter-btn.active, .sort-btn.active {
+            background: #e50914;
+            color: white;
+        }
+        /* SLIDER */
+        .slider-section {
+            margin-bottom: 50px;
+        }
+        .slider-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .slider-track {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            padding: 10px 0;
+        }
+        .slider-track::-webkit-scrollbar { display: none; }
+        .slider-card {
+            min-width: 200px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #15151f;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .slider-card img {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+        }
+        .slider-card:hover { transform: scale(1.05); }
+        .slider-prev, .slider-next {
+            background: rgba(0,0,0,0.7);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            position: absolute;
+            z-index: 2;
+        }
+        .slider-prev { left: -20px; }
+        .slider-next { right: -20px; }
+
+        /* GREATS SECTION */
+        .greats-section {
+            margin: 40px 0;
+        }
+        .greats-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e50914;
+            padding-left: 16px;
+        }
+        .greats-grid {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        .great-card {
+            min-width: 160px;
+            background: #15151f;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .great-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+        }
+        .great-card:hover { transform: translateY(-5px); }
+
+        /* MAIN GRID */
+        .movies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 24px;
+            margin: 30px 0;
+        }
+        .movie-card {
+            background: #15151f;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+        .movie-card img {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+        }
+        .movie-card:hover { transform: translateY(-6px); }
+        .card-info {
+            padding: 12px;
+        }
+        .card-info h3 {
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .trailer-preview {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 260px;
+            background: black;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .movie-card:hover .trailer-preview {
+            display: flex;
+        }
+        .load-more {
+            background: #e50914;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            margin: 20px auto;
+            cursor: pointer;
+        }
+        .loader {
+            text-align: center;
+            padding: 20px;
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .menu-toggle { display: block; }
+            .slider-prev, .slider-next { display: none; }
+        }
+    </style>
 </head>
 <body>
-  <div class="app">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="logo">
-        <h2>ALBFILMS<span>24</span></h2>
-      </div>
-      <nav class="main-nav">
-        <a href="index.html" class="nav-link active"><i class="fas fa-film"></i> Movies</a>
-        <a href="tv.html" class="nav-link"><i class="fas fa-tv"></i> TV Shows</a>
-      </nav>
-      <div class="user-lists">
-        <h4><i class="fas fa-heart"></i> My Lists</h4>
-        <a href="#" class="list-link" data-list="favorites"><i class="fas fa-heart"></i> Favorites</a>
-        <a href="#" class="list-link" data-list="watchlater"><i class="fas fa-clock"></i> Watch Later</a>
-        <a href="#" class="list-link" data-list="continue"><i class="fas fa-play-circle"></i> Continue Watching</a>
-      </div>
-      <div class="studios">
+
+<div class="sidebar" id="sidebar">
+    <div class="logo"><h2>ALBFILMS<span>24</span></h2></div>
+    <div class="sidebar-section">
+        <h4><i class="fas fa-list"></i> My Lists</h4>
+        <a href="#" data-list="favorites"><i class="fas fa-heart"></i> Favorites</a>
+        <a href="#" data-list="watchlater"><i class="fas fa-clock"></i> Watch Later</a>
+        <a href="#" data-list="continue"><i class="fas fa-play-circle"></i> Continue Watching</a>
+    </div>
+    <div class="sidebar-section">
         <h4><i class="fas fa-building"></i> Studios</h4>
-        <a href="#" data-studio="Netflix"><i class="fab fa-netflix"></i> Netflix</a>
-        <a href="#" data-studio="Prime"><i class="fab fa-amazon"></i> Prime Amazon</a>
-        <a href="#" data-studio="Disney"><i class="fab fa-disney"></i> Disney+</a>
-        <a href="#" data-studio="HBO"><i class="fas fa-tv"></i> HBO Max</a>
-        <a href="#" data-studio="Apple"><i class="fab fa-apple"></i> Apple TV+</a>
-      </div>
-      <div class="genres">
-        <h4><i class="fas fa-tags"></i> Genres (30+)</h4>
-        <div class="genres-grid" id="genres-list"></div>
-      </div>
-      <div class="sidebar-footer">
-        <p>© 2025 ALBFILMS24</p>
-      </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-content">
-      <div class="header">
-        <button id="menu-toggle" class="menu-icon"><i class="fas fa-bars"></i></button>
-        <div class="search-bar">
-          <i class="fas fa-search"></i>
-          <input type="text" id="search-input" placeholder="Search 5000+ movies, 2000+ series...">
+        <div class="studio-row">
+            <a href="#" data-studio="Netflix">Netflix</a>
+            <a href="#" data-studio="Prime">Prime</a>
+            <a href="#" data-studio="Disney">Disney+</a>
+            <a href="#" data-studio="HBO">HBO</a>
+            <a href="#" data-studio="Apple">Apple TV+</a>
         </div>
-      </div>
+    </div>
+    <div class="sidebar-section">
+        <h4><i class="fas fa-tags"></i> Genres</h4>
+        <a href="#" class="genres-trigger" id="openGenresModal"><i class="fas fa-plus-circle"></i> Click to choose genre</a>
+    </div>
+    <div class="sidebar-section">
+        <h4><i class="fas fa-trophy"></i> Top Lists</h4>
+        <a href="#" id="topMoviesLink"><i class="fas fa-film"></i> 100 Greatest Movies</a>
+        <a href="#" id="topTvLink"><i class="fas fa-tv"></i> 100 Greatest TV Shows</a>
+    </div>
+</div>
 
-      <!-- Top Slider (6 most clicked, changes every 24h) -->
-      <section class="slider-section">
-        <h2><i class="fas fa-chart-line"></i> Trending Now 🔥</h2>
-        <div class="slider-container">
-          <button class="slider-prev"><i class="fas fa-chevron-left"></i></button>
-          <div class="slider-track" id="slider-track"></div>
-          <button class="slider-next"><i class="fas fa-chevron-right"></i></button>
+<div class="main-content">
+    <div class="top-bar">
+        <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search 5000+ movies, 1000+ series...">
         </div>
-      </section>
-
-      <!-- Dynamic Content Grid -->
-      <section class="content-section">
-        <div class="section-header">
-          <h2 id="section-title">Recommended Movies</h2>
-          <div class="filter-buttons">
+        <div class="filter-buttons">
             <button class="filter-btn active" data-type="movie">Movies</button>
             <button class="filter-btn" data-type="tv">TV Series</button>
-          </div>
         </div>
-        <div class="movies-grid" id="movies-grid">
-          <!-- Cards loaded via JS -->
+        <div class="filter-buttons">
+            <button class="sort-btn" data-sort="popular">Popular</button>
+            <button class="sort-btn active" data-sort="top_rated">Top Rated</button>
         </div>
-        <div class="loader" id="loader" style="display:none;"><div class="spinner"></div></div>
-        <button id="load-more" class="load-more">Load More</button>
-      </section>
-    </main>
-  </div>
+    </div>
 
-  <script src="main.js"></script>
-  <script>
-    // Page-specific init
-    window.currentPage = 'index';
-    window.contentType = 'movie';
-    initIndexPage();
-  </script>
+    <!-- Slider (6 most clicked) -->
+    <section class="slider-section">
+        <h2><i class="fas fa-fire"></i> Most Clicked (changes every 24h)</h2>
+        <div class="slider-container">
+            <button class="slider-prev"><i class="fas fa-chevron-left"></i></button>
+            <div class="slider-track" id="sliderTrack"></div>
+            <button class="slider-next"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </section>
+
+    <!-- 100 Greatest Movies & TV Shows -->
+    <div class="greats-section">
+        <div class="greats-title">🏆 100 Greatest Movies</div>
+        <div class="greats-grid" id="greatMoviesGrid"></div>
+    </div>
+    <div class="greats-section">
+        <div class="greats-title">📺 100 Greatest TV Shows</div>
+        <div class="greats-grid" id="greatTvGrid"></div>
+    </div>
+
+    <!-- Main Dynamic Grid -->
+    <h2 id="sectionTitle">Top Rated Movies</h2>
+    <div class="movies-grid" id="moviesGrid"></div>
+    <div class="loader" id="loader" style="display:none;">Loading...</div>
+    <button id="loadMoreBtn" class="load-more">Load More</button>
+</div>
+
+<!-- Modal per Genre -->
+<div id="genreModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Select Genre</h3>
+        <div class="genre-grid-modal" id="genreModalList"></div>
+    </div>
+</div>
+
+<script>
+    // ========== CONFIG ==========
+    const API_KEY = '7a98db423d6e3a5ee922a3e51a09d135';
+    const BASE_URL = 'https://api.themoviedb.org/3';
+    const IMG_URL = 'https://image.tmdb.org/t/p/w500';
+    let currentType = 'movie';      // 'movie' or 'tv'
+    let currentSort = 'top_rated';  // 'popular' or 'top_rated'
+    let currentGenre = null;
+    let currentStudio = null;
+    let currentQuery = '';
+    let currentPage = 1;
+    let isLoading = false;
+    let totalPages = 1;
+
+    // Local storage
+    let favorites = JSON.parse(localStorage.getItem('alb_favorites')) || [];
+    let watchlist = JSON.parse(localStorage.getItem('alb_watchlist')) || [];
+    let continueWatching = JSON.parse(localStorage.getItem('alb_continue')) || [];
+
+    function saveFav() { localStorage.setItem('alb_favorites', JSON.stringify(favorites)); }
+    function saveWatch() { localStorage.setItem('alb_watchlist', JSON.stringify(watchlist)); }
+    function saveContinue() { localStorage.setItem('alb_continue', JSON.stringify(continueWatching)); }
+
+    // Helper: fetch from TMDB
+    async function fetchTMDB(endpoint, params = {}) {
+        const url = new URL(`${BASE_URL}${endpoint}`);
+        url.searchParams.append('api_key', API_KEY);
+        Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
+        const res = await fetch(url);
+        return res.json();
+    }
+
+    // Load genres for modal
+    async function loadGenresModal() {
+        const movieGenres = await fetchTMDB('/genre/movie/list');
+        const tvGenres = await fetchTMDB('/genre/tv/list');
+        const all = [...movieGenres.genres, ...tvGenres.genres];
+        const unique = new Map();
+        all.forEach(g => { if (!unique.has(g.id)) unique.set(g.id, g); });
+        const container = document.getElementById('genreModalList');
+        container.innerHTML = '';
+        unique.forEach(genre => {
+            const btn = document.createElement('button');
+            btn.textContent = genre.name;
+            btn.onclick = () => {
+                currentGenre = genre.id;
+                currentStudio = null;
+                currentQuery = '';
+                currentPage = 1;
+                loadContent(true);
+                document.getElementById('genreModal').style.display = 'none';
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    // Load content (movies or tv)
+    async function loadContent(reset = true) {
+        if (isLoading) return;
+        isLoading = true;
+        if (reset) {
+            currentPage = 1;
+            document.getElementById('moviesGrid').innerHTML = '';
+        }
+        document.getElementById('loader').style.display = 'block';
+        let endpoint = '';
+        let params = { page: currentPage };
+        if (currentQuery) {
+            endpoint = `/search/${currentType}`;
+            params.query = currentQuery;
+        } else if (currentGenre) {
+            endpoint = `/discover/${currentType}`;
+            params.with_genres = currentGenre;
+            params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
+            if (currentSort === 'top_rated') params['vote_count.gte'] = 200;
+        } else if (currentStudio) {
+            endpoint = `/discover/${currentType}`;
+            if (currentStudio === 'Netflix') params.with_networks = '213';
+            else if (currentStudio === 'Prime') params.with_companies = '174';
+            else if (currentStudio === 'Disney') params.with_companies = '2739';
+            else if (currentStudio === 'HBO') params.with_networks = '49';
+            else if (currentStudio === 'Apple') params.with_companies = '2';
+            params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
+        } else {
+            if (currentSort === 'top_rated') {
+                endpoint = `/${currentType}/top_rated`;
+            } else {
+                endpoint = `/${currentType}/popular`;
+            }
+        }
+        const data = await fetchTMDB(endpoint, params);
+        totalPages = Math.min(data.total_pages, 200);
+        displayContent(data.results);
+        isLoading = false;
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('loadMoreBtn').style.display = (currentPage < totalPages) ? 'block' : 'none';
+    }
+
+    // Display grid
+    function displayContent(items) {
+        const grid = document.getElementById('moviesGrid');
+        items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'movie-card';
+            const id = item.id;
+            const title = item.title || item.name;
+            const poster = item.poster_path ? IMG_URL + item.poster_path : '';
+            const rating = item.vote_average?.toFixed(1) || 'N/A';
+            card.innerHTML = `
+                <img loading="lazy" src="${poster}" alt="${title}">
+                <div class="trailer-preview" data-id="${id}" data-type="${currentType}">
+                    <i class="fas fa-play-circle" style="font-size: 40px; color:#e50914;"></i>
+                </div>
+                <div class="card-info">
+                    <h3>${title}</h3>
+                    <p>⭐ ${rating}</p>
+                </div>
+            `;
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.trailer-preview')) return;
+                incrementClick(id, currentType);
+                if (currentType === 'movie') window.location.href = `watch.html?id=${id}&type=movie`;
+                else window.location.href = `tv.html?id=${id}`;
+            });
+            // Hover trailer: fetch YouTube trailer
+            const trailerDiv = card.querySelector('.trailer-preview');
+            card.addEventListener('mouseenter', async () => {
+                const vId = trailerDiv.dataset.id;
+                const vType = trailerDiv.dataset.type;
+                if (!trailerDiv.dataset.trailerLoaded) {
+                    const trailData = await fetchTMDB(`/${vType}/${vId}/videos`);
+                    const trailer = trailData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                    if (trailer) {
+                        trailerDiv.style.background = `url(https://img.youtube.com/vi/${trailer.key}/mqdefault.jpg) center/cover`;
+                        trailerDiv.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${trailer.key}?autoplay=1&mute=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>`;
+                    } else {
+                        trailerDiv.innerHTML = '<span style="color:white;">No trailer</span>';
+                    }
+                    trailerDiv.dataset.trailerLoaded = 'true';
+                }
+            });
+            grid.appendChild(card);
+        });
+    }
+
+    // Increment click for slider
+    function incrementClick(id, type) {
+        let stats = JSON.parse(localStorage.getItem('clickStats')) || {};
+        const key = `${type}_${id}`;
+        const now = Date.now();
+        if (!stats[key]) stats[key] = { clicks: [] };
+        stats[key].clicks = (stats[key].clicks || []).filter(t => t > now - 86400000);
+        stats[key].clicks.push(now);
+        localStorage.setItem('clickStats', stats);
+    }
+
+    async function renderSlider() {
+        const stats = JSON.parse(localStorage.getItem('clickStats')) || {};
+        const entries = Object.entries(stats).map(([key, val]) => ({ key, count: val.clicks.length }));
+        entries.sort((a,b) => b.count - a.count);
+        const top6 = entries.slice(0,6);
+        const track = document.getElementById('sliderTrack');
+        track.innerHTML = '';
+        for (let entry of top6) {
+            const [type, id] = entry.key.split('_');
+            const data = await fetchTMDB(`/${type}/${id}`);
+            if (data && data.poster_path) {
+                const card = document.createElement('div');
+                card.className = 'slider-card';
+                card.innerHTML = `<img src="${IMG_URL + data.poster_path}"><div class="card-info"><h3>${data.title || data.name}</h3></div>`;
+                card.onclick = () => { if (type === 'movie') location.href=`watch.html?id=${id}&type=movie`; else location.href=`tv.html?id=${id}`; };
+                track.appendChild(card);
+            }
+        }
+    }
+
+    // Load 100 Greatest (Top Rated)
+    async function loadGreatLists() {
+        const movieTop = await fetchTMDB('/movie/top_rated', { page: 1 });
+        const tvTop = await fetchTMDB('/tv/top_rated', { page: 1 });
+        const greatMovies = movieTop.results.slice(0, 20);
+        const greatTv = tvTop.results.slice(0, 20);
+        const movieGrid = document.getElementById('greatMoviesGrid');
+        const tvGrid = document.getElementById('greatTvGrid');
+        movieGrid.innerHTML = greatMovies.map(m => `<div class="great-card" data-id="${m.id}" data-type="movie"><img src="${IMG_URL + m.poster_path}"><div class="card-info"><h3>${m.title}</h3></div></div>`).join('');
+        tvGrid.innerHTML = greatTv.map(t => `<div class="great-card" data-id="${t.id}" data-type="tv"><img src="${IMG_URL + t.poster_path}"><div class="card-info"><h3>${t.name}</h3></div></div>`).join('');
+        document.querySelectorAll('.great-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const id = card.dataset.id;
+                const type = card.dataset.type;
+                if (type === 'movie') location.href = `watch.html?id=${id}&type=movie`;
+                else location.href = `tv.html?id=${id}`;
+            });
+        });
+    }
+
+    // Event listeners
+    document.getElementById('openGenresModal').onclick = () => { document.getElementById('genreModal').style.display = 'flex'; };
+    document.querySelector('.close-modal').onclick = () => { document.getElementById('genreModal').style.display = 'none'; };
+    window.onclick = (e) => { if (e.target === document.getElementById('genreModal')) document.getElementById('genreModal').style.display = 'none'; };
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentType = btn.dataset.type;
+            currentPage = 1;
+            currentGenre = null;
+            currentStudio = null;
+            currentQuery = '';
+            document.getElementById('searchInput').value = '';
+            loadContent(true);
+            document.getElementById('sectionTitle').innerText = currentType === 'movie' ? 'Top Rated Movies' : 'Top Rated TV Series';
+        };
+    });
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentSort = btn.dataset.sort;
+            currentPage = 1;
+            loadContent(true);
+        };
+    });
+    document.getElementById('searchInput').addEventListener('input', debounce((e) => {
+        currentQuery = e.target.value;
+        currentGenre = null;
+        currentStudio = null;
+        currentPage = 1;
+        loadContent(true);
+    }, 500));
+    document.getElementById('loadMoreBtn').onclick = () => { currentPage++; loadContent(false); };
+    document.getElementById('menuToggle').onclick = () => { document.getElementById('sidebar').classList.toggle('open'); };
+    document.querySelectorAll('[data-studio]').forEach(link => {
+        link.onclick = (e) => {
+            e.preventDefault();
+            currentStudio = link.dataset.studio;
+            currentGenre = null;
+            currentQuery = '';
+            currentPage = 1;
+            loadContent(true);
+        };
+    });
+    document.getElementById('topMoviesLink').onclick = (e) => {
+        e.preventDefault();
+        currentType = 'movie';
+        currentSort = 'top_rated';
+        currentGenre = null;
+        currentStudio = null;
+        currentPage = 1;
+        loadContent(true);
+    };
+    document.getElementById('topTvLink').onclick = (e) => {
+        e.preventDefault();
+        currentType = 'tv';
+        currentSort = 'top_rated';
+        currentGenre = null;
+        currentStudio = null;
+        currentPage = 1;
+        loadContent(true);
+    };
+    function debounce(fn, delay) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); }; }
+
+    // Init
+    loadGenresModal();
+    loadGreatLists();
+    loadContent(true);
+    renderSlider();
+    setInterval(renderSlider, 86400000);
+</script>
 </body>
 </html>
