@@ -1,26 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Series Details - ALBFILMS24</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ALBFILMS24 – TV Shows</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar" id="sidebar"><!-- same sidebar structure will be injected by JS or static, but we copy same as above for simplicity --></aside>
+<div class="app">
+    <aside class="sidebar" id="sidebar">
+        <div class="logo">
+            <h1>ALBFILMS<span>24</span>.COM</h1>
+            <div class="logo-glow"></div>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html" class="nav-link"><i class="fas fa-film"></i><span>Movies</span></a>
+            <a href="tvshows.html" class="nav-link active"><i class="fas fa-tv"></i><span>TV Shows</span></a>
+        </nav>
+        <div class="user-lists">
+            <h4><i class="fas fa-heart"></i> My Lists</h4>
+            <a href="#" data-list="favorites"><i class="fas fa-heart"></i> Favorites</a>
+            <a href="#" data-list="watchlater"><i class="fas fa-clock"></i> Watch Later</a>
+            <a href="#" data-list="continue"><i class="fas fa-play-circle"></i> Continue Watching</a>
+        </div>
+        <div class="studios">
+            <h4><i class="fas fa-building"></i> Studios</h4>
+            <div class="studio-buttons">
+                <button data-studio="Netflix"><i class="fab fa-netflix"></i> Netflix</button>
+                <button data-studio="Prime"><i class="fab fa-amazon"></i> Prime</button>
+                <button data-studio="Disney"><i class="fab fa-disney"></i> Disney+</button>
+                <button data-studio="HBO"><i class="fas fa-tv"></i> HBO</button>
+                <button data-studio="Apple"><i class="fab fa-apple"></i> Apple TV+</button>
+            </div>
+        </div>
+        <div class="genres">
+            <h4><i class="fas fa-tags"></i> Genres</h4>
+            <button id="openGenresBtn" class="genre-trigger"><i class="fas fa-plus-circle"></i> Choose Genre</button>
+        </div>
+        <div class="top-lists">
+            <h4><i class="fas fa-trophy"></i> Top Lists</h4>
+            <a href="#" id="topMoviesLink"><i class="fas fa-film"></i> 100 Greatest Movies</a>
+            <a href="#" id="topTvLink"><i class="fas fa-tv"></i> 100 Greatest TV Shows</a>
+        </div>
+        <div class="sidebar-footer">
+            <p>© 2025 ALBFILMS24</p>
+        </div>
+    </aside>
+
     <main class="main-content">
-      <div class="header"><button id="menu-toggle" class="menu-icon"><i class="fas fa-bars"></i></button><a href="tv.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to TV</a></div>
-      <div id="tv-detail-container">
-        <!-- Dynamic content: series info, seasons, episodes -->
-      </div>
+        <div class="top-bar">
+            <button id="menuToggle" class="menu-icon"><i class="fas fa-bars"></i></button>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search 5000+ TV series...">
+            </div>
+            <div class="filter-tabs">
+                <button class="filter-tab" data-type="movie">Movies</button>
+                <button class="filter-tab active" data-type="tv">TV Series</button>
+            </div>
+            <div class="sort-buttons">
+                <button class="sort-btn" data-sort="popular">Popular</button>
+                <button class="sort-btn active" data-sort="top_rated">Top Rated</button>
+            </div>
+        </div>
+
+        <section class="slider-section">
+            <h2><i class="fas fa-chart-line"></i> Trending TV 🔥</h2>
+            <div class="slider-container">
+                <button class="slider-nav prev"><i class="fas fa-chevron-left"></i></button>
+                <div class="slider-track" id="sliderTrack"></div>
+                <button class="slider-nav next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </section>
+
+        <div class="greats-row">
+            <div class="greats-section">
+                <h3>🏆 100 Greatest Movies</h3>
+                <div class="greats-slider" id="greatMoviesSlider"></div>
+            </div>
+            <div class="greats-section">
+                <h3>📺 100 Greatest TV Shows</h3>
+                <div class="greats-slider" id="greatTvSlider"></div>
+            </div>
+        </div>
+
+        <div class="content-header">
+            <h2 id="sectionTitle">Top Rated TV Series</h2>
+        </div>
+        <div class="movies-grid" id="moviesGrid"></div>
+        <div class="loader" id="loader" style="display:none;"><div class="spinner"></div></div>
+        <button id="loadMoreBtn" class="load-more">Load More <i class="fas fa-arrow-down"></i></button>
     </main>
-  </div>
-  <script src="main.js"></script>
-  <script>
-    window.currentPage = 'tvshows';
-    initTVShowDetail();
-  </script>
+</div>
+
+<div id="genreModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Select Genre</h3>
+        <div class="genre-grid" id="genreGrid"></div>
+    </div>
+</div>
+
+<script src="main.js"></script>
+<script>
+    window.currentPageType = 'tv';
+    initTVShowsPage();
+</script>
 </body>
 </html>
