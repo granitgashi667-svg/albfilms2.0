@@ -55,7 +55,7 @@
             <button id="menuToggle" class="menu-icon"><i class="fas fa-bars"></i></button>
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Search TV Series/Movies (min 3 letters)">
+                <input type="text" id="searchInput" placeholder="Search (min 3 letters)">
             </div>
             <div class="filter-tabs">
                 <button class="filter-tab" data-type="movie">Movies</button>
@@ -78,11 +78,11 @@
 
         <div class="greats-row">
             <div class="greats-section">
-                <h3>🏆 100 Greatest Movies</h3>
+                <h3>🏆 100 Greatest Movies <button class="greats-prev" data-greats="movies"><i class="fas fa-chevron-left"></i></button><button class="greats-next" data-greats="movies"><i class="fas fa-chevron-right"></i></button></h3>
                 <div class="greats-slider" id="greatMoviesSlider"></div>
             </div>
             <div class="greats-section">
-                <h3>📺 100 Greatest TV Shows</h3>
+                <h3>📺 100 Greatest TV Shows <button class="greats-prev" data-greats="tv"><i class="fas fa-chevron-left"></i></button><button class="greats-next" data-greats="tv"><i class="fas fa-chevron-right"></i></button></h3>
                 <div class="greats-slider" id="greatTvSlider"></div>
             </div>
         </div>
@@ -104,11 +104,7 @@
     </div>
 </div>
 
-<div id="hoverPopup" class="hover-popup" style="display:none;">
-    <div id="popupTrailer"></div>
-    <div id="popupTitle"></div>
-    <div id="popupDesc"></div>
-</div>
+<div id="hoverPopup" class="hover-popup" style="display:none;"></div>
 
 <script src="main.js"></script>
 <script>
