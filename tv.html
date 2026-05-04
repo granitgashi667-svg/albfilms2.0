@@ -79,16 +79,17 @@
             <div class="poster"><img src="${data.poster_path ? IMG+data.poster_path : ''}"></div>
             <div style="flex:1">
                 <div class="title">${data.name}</div>
-                <div><span class="detail-badge"><i class="fas fa-calendar"></i> ${year}</span>
-                <span class="detail-badge"><i class="fas fa-star"></i> ${data.vote_average?.toFixed(1)}/10</span>
-                <span class="detail-badge"><i class="fas fa-tv"></i> ${seasonsCount} Seasons</span>
-                <span class="detail-badge"><i class="fas fa-building"></i> ${studio}</span></div>
+                <div>
+                    <span class="detail-badge"><i class="fas fa-calendar"></i> ${year}</span>
+                    <span class="detail-badge"><i class="fas fa-star"></i> ${data.vote_average?.toFixed(1)}/10</span>
+                    <span class="detail-badge"><i class="fas fa-tv"></i> ${seasonsCount} Seasons</span>
+                    <span class="detail-badge"><i class="fas fa-building"></i> ${studio}</span>
+                </div>
                 <div class="cast" style="margin:12px 0;"><i class="fas fa-users"></i> <strong>Cast:</strong> ${cast}</div>
                 <p>${data.overview || 'No description.'}</p>
             </div>
         `;
         
-        // Seasons
         const seasons = data.seasons.filter(s => s.season_number > 0);
         const seasonsDiv = document.getElementById('seasonsContainer');
         seasonsDiv.innerHTML = '';
@@ -106,7 +107,6 @@
         });
         if (seasons.length) loadEpisodes(seasons[0].season_number);
         
-        // Server buttons
         const serverDiv = document.getElementById('serverList');
         serverDiv.innerHTML = '';
         Object.keys(servers).forEach(key => {
@@ -117,7 +117,6 @@
                 currentServer = key;
                 document.querySelectorAll('.server-btn').forEach(b=>b.classList.remove('active'));
                 btn.classList.add('active');
-                // If an episode is currently playing, reload it
                 const activeEp = document.querySelector('.episode-card.active-ep');
                 if (activeEp && activeEp.dataset.season && activeEp.dataset.episode) {
                     playEpisode(parseInt(activeEp.dataset.season), parseInt(activeEp.dataset.episode));
