@@ -11,7 +11,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Sidebar - now clickable and above content */
+/* Sidebar */
 .sidebar {
     position: fixed;
     left: 0;
@@ -21,14 +21,13 @@ body {
     background: rgba(5, 5, 8, 0.98);
     backdrop-filter: blur(16px);
     border-right: 1px solid rgba(255, 255, 255, 0.08);
-    z-index: 1000;  /* Higher than main content */
+    z-index: 1000;
     padding: 28px 20px;
     transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
     overflow-y: auto;
 }
 
-/* Sidebar links and buttons must have pointer-events auto */
-.sidebar a, .sidebar button, .sidebar .studio-btn, .sidebar .genre-trigger {
+.sidebar a, .sidebar button {
     pointer-events: auto;
     cursor: pointer;
 }
@@ -91,7 +90,7 @@ body {
 }
 
 .main-nav a:hover, .user-lists a:hover, .top-lists a:hover,
-.main-nav a.active, .user-lists a.active {
+.main-nav a.active {
     background: rgba(229, 9, 20, 0.15);
     color: #e50914;
     box-shadow: 0 0 8px rgba(229,9,20,0.3);
@@ -311,13 +310,38 @@ body {
     margin-bottom: 15px;
     border-left: 4px solid #e50914;
     padding-left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.greats-section h3 button {
+    background: #1e2026;
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.greats-section h3 button:hover {
+    background: #e50914;
 }
 
 .greats-slider {
     display: flex;
     gap: 15px;
     overflow-x: auto;
+    scroll-behavior: smooth;
     padding-bottom: 10px;
+    scrollbar-width: thin;
+    cursor: grab;
+}
+
+.greats-slider:active {
+    cursor: grabbing;
 }
 
 .great-card {
@@ -368,15 +392,15 @@ body {
     border-color: #e50914;
 }
 
-/* Action icons on card */
+/* Action icons */
 .card-actions {
     position: absolute;
     top: 10px;
     right: 10px;
     display: flex;
     gap: 10px;
-    z-index: 10;
-    background: rgba(0,0,0,0.5);
+    z-index: 15;
+    background: rgba(0,0,0,0.6);
     backdrop-filter: blur(4px);
     border-radius: 30px;
     padding: 5px 8px;
@@ -391,6 +415,17 @@ body {
 
 .card-actions .fa-heart:hover, .card-actions .fa-clock:hover {
     transform: scale(1.2);
+}
+
+.card-info {
+    padding: 12px;
+}
+
+.card-info h3 {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Hover popup */
