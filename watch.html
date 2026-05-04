@@ -12,7 +12,6 @@
             background: #0a0a0f;
             color: #fff;
             font-family: 'Inter', sans-serif;
-            min-height: 100vh;
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -20,24 +19,20 @@
         body::before {
             content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top:0; left:0; width:100%; height:100%;
             background: rgba(0,0,0,0.75);
-            z-index: -1;
+            z-index:-1;
         }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .container { max-width:1200px; margin:0 auto; padding:20px; }
         .back-btn { background:#1e2026; border:none; padding:10px 24px; border-radius:40px; color:white; cursor:pointer; margin-bottom:20px; display:inline-flex; align-items:center; gap:8px; }
         .movie-hero { display:flex; gap:30px; background:rgba(20,20,30,0.7); backdrop-filter:blur(12px); border-radius:28px; padding:25px; margin-bottom:30px; flex-wrap:wrap; }
         .poster img { width:220px; border-radius:16px; box-shadow:0 10px 20px rgba(0,0,0,0.5); }
         .title { font-size:36px; font-weight:800; background:linear-gradient(135deg,#fff,#e50914); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:12px; }
-        .details-grid { display:flex; flex-wrap:wrap; gap:12px; margin:15px 0; }
-        .detail-badge { background:#1e2026; padding:5px 12px; border-radius:30px; font-size:0.85rem; }
+        .detail-badge { background:#1e2026; padding:5px 12px; border-radius:30px; font-size:0.85rem; display:inline-block; margin-right:10px; margin-top:8px; }
         .servers { display:flex; gap:12px; margin:20px 0; flex-wrap:wrap; }
         .server-btn { background:#1e2026; border:none; padding:10px 24px; border-radius:40px; color:#ccc; cursor:pointer; transition:0.2s; }
         .server-btn.active, .server-btn:hover { background:#e50914; color:white; }
-        .player-wrapper { border-radius:24px; overflow:hidden; background:#000; box-shadow:0 20px 30px -10px black; }
+        .player-wrapper { border-radius:24px; overflow:hidden; background:#000; }
         iframe { width:100%; aspect-ratio:16/9; border:none; }
         @media (max-width:700px){ .poster img{ width:140px; } .title{ font-size:24px; } }
     </style>
@@ -60,7 +55,6 @@
     const BACKDROP = 'https://image.tmdb.org/t/p/original';
     let currentServer = 'vidsrc';
     
-    // 6 servers (3 original + 3 extra)
     const servers = {
         vidsrc: { name: 'Server 1', getUrl: () => `https://vidsrcme.ru/embed/movie/${id}` },
         multiembed: { name: 'Server 2 (AirPlay)', getUrl: () => `https://multiembed.mov/?video_id=${id}&tmdb=1` },
@@ -73,7 +67,6 @@
     async function loadDetails() {
         const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&append_to_response=credits`);
         const data = await res.json();
-        // Set background to backdrop or poster
         if (data.backdrop_path) document.body.style.backgroundImage = `url('${BACKDROP + data.backdrop_path}')`;
         else if (data.poster_path) document.body.style.backgroundImage = `url('${IMG + data.poster_path}')`;
         
@@ -86,18 +79,17 @@
             <div class="poster"><img src="${data.poster_path ? IMG+data.poster_path : ''}"></div>
             <div style="flex:1">
                 <div class="title">${data.title || data.name}</div>
-                <div class="details-grid">
+                <div>
                     <span class="detail-badge"><i class="fas fa-calendar"></i> ${year}</span>
                     <span class="detail-badge"><i class="fas fa-star"></i> ${data.vote_average?.toFixed(1)}/10</span>
                     <span class="detail-badge"><i class="fas fa-clock"></i> ${runtime}</span>
                     <span class="detail-badge"><i class="fas fa-building"></i> ${studio}</span>
                 </div>
-                <div class="cast"><i class="fas fa-users"></i> <strong>Cast:</strong> ${cast}</div>
-                <p style="margin-top:15px; line-height:1.5;">${data.overview || 'No description available.'}</p>
+                <div class="cast" style="margin:12px 0;"><i class="fas fa-users"></i> <strong>Cast:</strong> ${cast}</div>
+                <p style="line-height:1.5;">${data.overview || 'No description available.'}</p>
             </div>
         `;
         
-        // Server buttons
         const container = document.getElementById('serverList');
         container.innerHTML = '';
         Object.keys(servers).forEach(key => {
@@ -116,9 +108,7 @@
     }
     
     function loadVideo() {
-        let url = servers[currentServer].getUrl();
-        // If the server URL fails, try fallback? but we keep as is.
-        document.getElementById('player').src = url;
+        document.getElementById('player').src = servers[currentServer].getUrl();
     }
     
     loadDetails();
