@@ -90,14 +90,12 @@ async function loadContent(reset = true) {
     } 
     else if (currentStudio) {
         endpoint = `/discover/${currentType}`;
-        // Studio filtering: Netflix (network 213), Prime (company 174), Disney (company 2739), HBO (network 49), Apple (company 2)
         if (currentStudio === 'Netflix') params.with_networks = '213';
         else if (currentStudio === 'Prime') params.with_companies = '174';
         else if (currentStudio === 'Disney') params.with_companies = '2739';
         else if (currentStudio === 'HBO') params.with_networks = '49';
         else if (currentStudio === 'Apple') params.with_companies = '2';
         params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
-        // Also include both movies and TV? Actually currentType will be set by user, but we can set to both? But we respect currentType.
     } 
     else {
         endpoint = `/${currentType}/${currentSort === 'top_rated' ? 'top_rated' : 'popular'}`;
@@ -215,7 +213,7 @@ async function showHoverPopup(card, id, type, event) {
     const rating = card.dataset.rating;
     
     popup.innerHTML = `
-        <div id="popupTrailer">${trailerKey ? `<iframe src="https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>` : '<div style="height:120px; background:#000; display:flex; align-items:center; justify-content:center;">No trailer</div>'}</div>
+        <div>${trailerKey ? `<iframe src="https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>` : '<div style="height:120px; background:#000; display:flex; align-items:center; justify-content:center;">No trailer</div>'}</div>
         <div class="popup-title">${title}</div>
         <div class="popup-desc">${overview}... <br>⭐ ${rating}/10</div>
     `;
@@ -287,11 +285,11 @@ function incrementClick(id, type) {
     localStorage.setItem('clickStats', stats);
 }
 
-// Load 100 Greatest with infinite scroll (load more pages)
+// 100 Greatest loading
 let greatsMoviePage = 1;
 let greatsTvPage = 1;
-let greatsMovieTotal = 0;
-let greatsTvTotal = 0;
+let greatsMovieTotal = 100;
+let greatsTvTotal = 100;
 let isLoadingGreats = false;
 
 async function loadGreatMovies(reset = true) {
@@ -300,10 +298,8 @@ async function loadGreatMovies(reset = true) {
     if (reset) {
         greatsMoviePage = 1;
         document.getElementById('greatMoviesSlider').innerHTML = '';
-        greatsMovieTotal = 0;
     }
     const data = await fetchAPI('/movie/top_rated', { page: greatsMoviePage });
-    if (reset) greatsMovieTotal = data.total_results;
     appendGreats(data.results, 'greatMoviesSlider', 'movie');
     greatsMoviePage++;
     isLoadingGreats = false;
@@ -315,10 +311,8 @@ async function loadGreatTv(reset = true) {
     if (reset) {
         greatsTvPage = 1;
         document.getElementById('greatTvSlider').innerHTML = '';
-        greatsTvTotal = 0;
     }
     const data = await fetchAPI('/tv/top_rated', { page: greatsTvPage });
-    if (reset) greatsTvTotal = data.total_results;
     appendGreats(data.results, 'greatTvSlider', 'tv');
     greatsTvPage++;
     isLoadingGreats = false;
@@ -338,29 +332,29 @@ function appendGreats(items, containerId, type) {
         });
         container.appendChild(card);
     });
-    // Check if we need more (if less than 100 total, we can load next on scroll end)
-    // We'll implement infinite scroll on greats sliders via scroll event
 }
 
-// Infinite scroll for greats sliders
+// Infinite scroll for greats
 function initGreatsInfiniteScroll() {
     const movieSlider = document.getElementById('greatMoviesSlider');
     const tvSlider = document.getElementById('greatTvSlider');
-    
-    const handleScroll = (slider, loadFunc, totalVar, pageVar) => {
-        slider.addEventListener('scroll', () => {
-            if (slider.scrollLeft + slider.clientWidth >= slider.scrollWidth - 10) {
-                if (pageVar * 20 < totalVar) {
-                    loadFunc(false);
-                }
+    if (movieSlider) {
+        movieSlider.addEventListener('scroll', () => {
+            if (movieSlider.scrollLeft + movieSlider.clientWidth >= movieSlider.scrollWidth - 50) {
+                loadGreatMovies(false);
             }
         });
-    };
-    if (movieSlider) handleScroll(movieSlider, loadGreatMovies, 'greatsMovieTotal', greatsMoviePage);
-    if (tvSlider) handleScroll(tvSlider, loadGreatTv, 'greatsTvTotal', greatsTvPage);
+    }
+    if (tvSlider) {
+        tvSlider.addEventListener('scroll', () => {
+            if (tvSlider.scrollLeft + tvSlider.clientWidth >= tvSlider.scrollWidth - 50) {
+                loadGreatTv(false);
+            }
+        });
+    }
 }
 
-// Turkish TV shows
+// Turkish TV
 async function loadTurkishTV() {
     isTurkishMode = true;
     currentGenre = null;
@@ -369,14 +363,14 @@ async function loadTurkishTV() {
     currentType = 'tv';
     currentPage = 1;
     await loadContent(true);
-    document.getElementById('sectionTitle').innerText = 'Turkish TV Series';
+    document.getElementById('sectionTitle').innerHTML = 'Turkish TV Series <i class="fas fa-flag-turkey"></i>';
     document.querySelectorAll('.filter-tab').forEach(btn => {
         if (btn.dataset.type === 'tv') btn.classList.add('active');
         else btn.classList.remove('active');
     });
 }
 
-// Slider drag & buttons
+// Slider drag
 function initSliderControls() {
     const track = document.querySelector('.slider-track');
     if (!track) return;
@@ -391,9 +385,8 @@ function initSliderControls() {
     if (nextBtn) nextBtn.onclick = () => { track.scrollBy({ left: 300, behavior: 'smooth' }); };
 }
 
-// Bind all events
+// Bind events
 function bindEvents() {
-    // Filter tabs
     document.querySelectorAll('.filter-tab').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
@@ -410,7 +403,6 @@ function bindEvents() {
             renderSlider();
         };
     });
-    // Sort buttons
     document.querySelectorAll('.sort-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
@@ -420,7 +412,6 @@ function bindEvents() {
             loadContent(true);
         };
     });
-    // Studio buttons
     document.querySelectorAll('.studio-btn').forEach(btn => {
         btn.onclick = () => {
             currentStudio = btn.dataset.studio;
@@ -429,12 +420,9 @@ function bindEvents() {
             isTurkishMode = false;
             currentPage = 1;
             loadContent(true);
-            // Update title
-            let studioName = btn.dataset.studio;
-            document.getElementById('sectionTitle').innerText = `${studioName} - ${currentType === 'movie' ? 'Movies' : 'TV Shows'}`;
+            document.getElementById('sectionTitle').innerText = `${btn.dataset.studio} - ${currentType === 'movie' ? 'Movies' : 'TV Shows'}`;
         };
     });
-    // Search input
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('input', debounce((e) => {
@@ -453,16 +441,13 @@ function bindEvents() {
             }
         }, 500));
     }
-    // Load more
     document.getElementById('loadMoreBtn')?.addEventListener('click', () => {
         currentPage++;
         loadContent(false);
     });
-    // Menu toggle
     document.getElementById('menuToggle')?.addEventListener('click', () => {
         document.getElementById('sidebar').classList.toggle('open');
     });
-    // Modal genres
     document.getElementById('openGenresBtn')?.addEventListener('click', () => {
         document.getElementById('genreModal').style.display = 'flex';
     });
@@ -472,7 +457,6 @@ function bindEvents() {
     window.onclick = (e) => {
         if (e.target === document.getElementById('genreModal')) document.getElementById('genreModal').style.display = 'none';
     };
-    // Top lists links
     document.getElementById('topMoviesLink')?.addEventListener('click', (e) => {
         e.preventDefault();
         currentType = 'movie';
@@ -509,7 +493,6 @@ function bindEvents() {
         e.preventDefault();
         loadTurkishTV();
     });
-    // Sidebar lists
     document.querySelectorAll('.sidebar-link[data-list]').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -521,7 +504,6 @@ function bindEvents() {
             displayUserList(items);
         });
     });
-    // Greats arrow buttons
     document.querySelectorAll('.greats-prev').forEach(btn => {
         btn.addEventListener('click', () => {
             const target = btn.dataset.greats === 'movies' ? 'greatMoviesSlider' : 'greatTvSlider';
@@ -556,14 +538,13 @@ function displayUserList(items) {
 
 function debounce(fn, delay) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); }; }
 
-// Page initializers
+// Initializers
 async function initIndexPage() {
     currentType = 'movie';
     await loadGenresModal();
     bindEvents();
     await loadContent(true);
     await renderSlider();
-    // Load 100 Greatest (first page)
     await loadGreatMovies(true);
     await loadGreatTv(true);
     initGreatsInfiniteScroll();
