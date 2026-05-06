@@ -47,7 +47,7 @@
     </div>
 </div>
 <script>
-    const urlParams = new URLSearchParams(location.search);
+    const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
     const type = urlParams.get('type') || 'movie';
     const API_KEY = '7a98db423d6e3a5ee922a3e51a09d135';
@@ -65,50 +65,60 @@
     };
     
     async function loadDetails() {
-        const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&append_to_response=credits`);
-        const data = await res.json();
-        if (data.backdrop_path) document.body.style.backgroundImage = `url('${BACKDROP + data.backdrop_path}')`;
-        else if (data.poster_path) document.body.style.backgroundImage = `url('${IMG + data.poster_path}')`;
-        
-        const year = (data.release_date || data.first_air_date || '').split('-')[0] || 'N/A';
-        const runtime = data.runtime ? `${Math.floor(data.runtime/60)}h ${data.runtime%60}m` : (data.number_of_episodes ? `${data.number_of_episodes} eps` : 'N/A');
-        const cast = data.credits?.cast?.slice(0,5).map(c=>c.name).join(', ') || 'N/A';
-        const studio = data.production_companies?.[0]?.name || 'Unknown';
-        
-        document.getElementById('info').innerHTML = `
-            <div class="poster"><img src="${data.poster_path ? IMG+data.poster_path : ''}"></div>
-            <div style="flex:1">
-                <div class="title">${data.title || data.name}</div>
-                <div>
-                    <span class="detail-badge"><i class="fas fa-calendar"></i> ${year}</span>
-                    <span class="detail-badge"><i class="fas fa-star"></i> ${data.vote_average?.toFixed(1)}/10</span>
-                    <span class="detail-badge"><i class="fas fa-clock"></i> ${runtime}</span>
-                    <span class="detail-badge"><i class="fas fa-building"></i> ${studio}</span>
+        if (!id) {
+            document.getElementById('info').innerHTML = '<div>No movie ID provided.</div>';
+            return;
+        }
+        try {
+            const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&append_to_response=credits`);
+            const data = await res.json();
+            if (data.backdrop_path) document.body.style.backgroundImage = `url('${BACKDROP + data.backdrop_path}')`;
+            else if (data.poster_path) document.body.style.backgroundImage = `url('${IMG + data.poster_path}')`;
+            
+            const year = (data.release_date || data.first_air_date || '').split('-')[0] || 'N/A';
+            const runtime = data.runtime ? `${Math.floor(data.runtime/60)}h ${data.runtime%60}m` : 'N/A';
+            const cast = data.credits?.cast?.slice(0,5).map(c=>c.name).join(', ') || 'N/A';
+            const studio = data.production_companies?.[0]?.name || 'Unknown';
+            
+            document.getElementById('info').innerHTML = `
+                <div class="poster"><img src="${data.poster_path ? IMG+data.poster_path : ''}" alt="${data.title || data.name}"></div>
+                <div style="flex:1">
+                    <div class="title">${data.title || data.name}</div>
+                    <div>
+                        <span class="detail-badge"><i class="fas fa-calendar"></i> ${year}</span>
+                        <span class="detail-badge"><i class="fas fa-star"></i> ${data.vote_average?.toFixed(1)}/10</span>
+                        <span class="detail-badge"><i class="fas fa-clock"></i> ${runtime}</span>
+                        <span class="detail-badge"><i class="fas fa-building"></i> ${studio}</span>
+                    </div>
+                    <div class="cast" style="margin:12px 0;"><i class="fas fa-users"></i> <strong>Cast:</strong> ${cast}</div>
+                    <p style="line-height:1.5;">${data.overview || 'No description available.'}</p>
                 </div>
-                <div class="cast" style="margin:12px 0;"><i class="fas fa-users"></i> <strong>Cast:</strong> ${cast}</div>
-                <p style="line-height:1.5;">${data.overview || 'No description available.'}</p>
-            </div>
-        `;
-        
-        const container = document.getElementById('serverList');
-        container.innerHTML = '';
-        Object.keys(servers).forEach(key => {
-            const btn = document.createElement('button');
-            btn.textContent = servers[key].name;
-            btn.className = `server-btn ${key === currentServer ? 'active' : ''}`;
-            btn.onclick = () => {
-                currentServer = key;
-                document.querySelectorAll('.server-btn').forEach(b=>b.classList.remove('active'));
-                btn.classList.add('active');
-                loadVideo();
-            };
-            container.appendChild(btn);
-        });
-        loadVideo();
+            `;
+            
+            const container = document.getElementById('serverList');
+            container.innerHTML = '';
+            Object.keys(servers).forEach(key => {
+                const btn = document.createElement('button');
+                btn.textContent = servers[key].name;
+                btn.className = `server-btn ${key === currentServer ? 'active' : ''}`;
+                btn.onclick = () => {
+                    currentServer = key;
+                    document.querySelectorAll('.server-btn').forEach(b=>b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadVideo();
+                };
+                container.appendChild(btn);
+            });
+            loadVideo();
+        } catch(e) {
+            console.error(e);
+            document.getElementById('info').innerHTML = '<div>Error loading movie details.</div>';
+        }
     }
     
     function loadVideo() {
-        document.getElementById('player').src = servers[currentServer].getUrl();
+        const player = document.getElementById('player');
+        if (player) player.src = servers[currentServer].getUrl();
     }
     
     loadDetails();
