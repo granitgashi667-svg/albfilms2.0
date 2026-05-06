@@ -117,13 +117,11 @@
                     };
                     seasonsDiv.appendChild(btn);
                 });
-                // Load first season episodes
                 currentSeason = seasons[0].season_number;
                 document.querySelectorAll('.season-btn')[0]?.classList.add('active');
                 loadEpisodes(currentSeason);
             }
             
-            // Server buttons
             const serverDiv = document.getElementById('serverList');
             serverDiv.innerHTML = '';
             Object.keys(servers).forEach(key => {
