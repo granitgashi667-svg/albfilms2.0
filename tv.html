@@ -37,6 +37,7 @@
         .episode-card:hover { background:#e50914; }
         .player-wrapper { border-radius:24px; overflow:hidden; background:#000; margin-top:20px; }
         iframe { width:100%; aspect-ratio:16/9; border:none; }
+        @media (max-width:700px){ .poster img{ width:140px; } .title{ font-size:24px; } }
     </style>
 </head>
 <body>
@@ -49,11 +50,13 @@
     <div id="playerContainer" class="player-wrapper" style="display:none;"><iframe id="player" allowfullscreen></iframe></div>
 </div>
 <script>
-    const tvId = new URLSearchParams(location.search).get('id');
+    const urlParams = new URLSearchParams(window.location.search);
+    const tvId = urlParams.get('id');
     const API_KEY = '7a98db423d6e3a5ee922a3e51a09d135';
     const IMG = 'https://image.tmdb.org/t/p/w500';
     const BACKDROP = 'https://image.tmdb.org/t/p/original';
-    let currentSeason = 1, currentServer = 'vidsrc';
+    let currentSeason = 1;
+    let currentServer = 'vidsrc';
     
     const servers = {
         vidsrc: { name: 'Server 1', getUrl: (s,e) => `https://vidsrcme.ru/embed/tv/${tvId}/${s}/${e}` },
@@ -65,85 +68,113 @@
     };
     
     async function loadTV() {
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}?api_key=${API_KEY}&append_to_response=credits`);
-        const data = await res.json();
-        if (data.backdrop_path) document.body.style.backgroundImage = `url('${BACKDROP + data.backdrop_path}')`;
-        else if (data.poster_path) document.body.style.backgroundImage = `url('${IMG + data.poster_path}')`;
-        
-        const year = (data.first_air_date || '').split('-')[0] || 'N/A';
-        const seasonsCount = data.number_of_seasons;
-        const cast = data.credits?.cast?.slice(0,5).map(c=>c.name).join(', ') || 'N/A';
-        const studio = data.production_companies?.[0]?.name || 'Unknown';
-        
-        document.getElementById('info').innerHTML = `
-            <div class="poster"><img src="${data.poster_path ? IMG+data.poster_path : ''}"></div>
-            <div style="flex:1">
-                <div class="title">${data.name}</div>
-                <div>
-                    <span class="detail-badge"><i class="fas fa-calendar"></i> ${year}</span>
-                    <span class="detail-badge"><i class="fas fa-star"></i> ${data.vote_average?.toFixed(1)}/10</span>
-                    <span class="detail-badge"><i class="fas fa-tv"></i> ${seasonsCount} Seasons</span>
-                    <span class="detail-badge"><i class="fas fa-building"></i> ${studio}</span>
+        if (!tvId) {
+            document.getElementById('info').innerHTML = '<div>No TV series ID provided.</div>';
+            return;
+        }
+        try {
+            const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}?api_key=${API_KEY}&append_to_response=credits`);
+            const data = await res.json();
+            if (data.backdrop_path) document.body.style.backgroundImage = `url('${BACKDROP + data.backdrop_path}')`;
+            else if (data.poster_path) document.body.style.backgroundImage = `url('${IMG + data.poster_path}')`;
+            
+            const year = (data.first_air_date || '').split('-')[0] || 'N/A';
+            const seasonsCount = data.number_of_seasons;
+            const cast = data.credits?.cast?.slice(0,5).map(c=>c.name).join(', ') || 'N/A';
+            const studio = data.production_companies?.[0]?.name || 'Unknown';
+            
+            document.getElementById('info').innerHTML = `
+                <div class="poster"><img src="${data.poster_path ? IMG+data.poster_path : ''}" alt="${data.name}"></div>
+                <div style="flex:1">
+                    <div class="title">${data.name}</div>
+                    <div>
+                        <span class="detail-badge"><i class="fas fa-calendar"></i> ${year}</span>
+                        <span class="detail-badge"><i class="fas fa-star"></i> ${data.vote_average?.toFixed(1)}/10</span>
+                        <span class="detail-badge"><i class="fas fa-tv"></i> ${seasonsCount} Seasons</span>
+                        <span class="detail-badge"><i class="fas fa-building"></i> ${studio}</span>
+                    </div>
+                    <div class="cast" style="margin:12px 0;"><i class="fas fa-users"></i> <strong>Cast:</strong> ${cast}</div>
+                    <p>${data.overview || 'No description.'}</p>
                 </div>
-                <div class="cast" style="margin:12px 0;"><i class="fas fa-users"></i> <strong>Cast:</strong> ${cast}</div>
-                <p>${data.overview || 'No description.'}</p>
-            </div>
-        `;
-        
-        const seasons = data.seasons.filter(s => s.season_number > 0);
-        const seasonsDiv = document.getElementById('seasonsContainer');
-        seasonsDiv.innerHTML = '';
-        seasons.forEach(s => {
-            const btn = document.createElement('button');
-            btn.textContent = `Season ${s.season_number}`;
-            btn.className = 'season-btn';
-            btn.onclick = () => {
-                currentSeason = s.season_number;
-                document.querySelectorAll('.season-btn').forEach(b=>b.classList.remove('active'));
-                btn.classList.add('active');
+            `;
+            
+            const seasons = data.seasons.filter(s => s.season_number > 0);
+            const seasonsDiv = document.getElementById('seasonsContainer');
+            seasonsDiv.innerHTML = '';
+            if (seasons.length === 0) {
+                seasonsDiv.innerHTML = '<div>No seasons found.</div>';
+            } else {
+                seasons.forEach(s => {
+                    const btn = document.createElement('button');
+                    btn.textContent = `Season ${s.season_number}`;
+                    btn.className = 'season-btn';
+                    if (currentSeason === s.season_number) btn.classList.add('active');
+                    btn.onclick = () => {
+                        currentSeason = s.season_number;
+                        document.querySelectorAll('.season-btn').forEach(b=>b.classList.remove('active'));
+                        btn.classList.add('active');
+                        loadEpisodes(currentSeason);
+                    };
+                    seasonsDiv.appendChild(btn);
+                });
+                // Load first season episodes
+                currentSeason = seasons[0].season_number;
+                document.querySelectorAll('.season-btn')[0]?.classList.add('active');
                 loadEpisodes(currentSeason);
-            };
-            seasonsDiv.appendChild(btn);
-        });
-        if (seasons.length) loadEpisodes(seasons[0].season_number);
-        
-        const serverDiv = document.getElementById('serverList');
-        serverDiv.innerHTML = '';
-        Object.keys(servers).forEach(key => {
-            const btn = document.createElement('button');
-            btn.textContent = servers[key].name;
-            btn.className = `server-btn ${key === currentServer ? 'active' : ''}`;
-            btn.onclick = () => {
-                currentServer = key;
-                document.querySelectorAll('.server-btn').forEach(b=>b.classList.remove('active'));
-                btn.classList.add('active');
-                const activeEp = document.querySelector('.episode-card.active-ep');
-                if (activeEp && activeEp.dataset.season && activeEp.dataset.episode) {
-                    playEpisode(parseInt(activeEp.dataset.season), parseInt(activeEp.dataset.episode));
-                }
-            };
-            serverDiv.appendChild(btn);
-        });
+            }
+            
+            // Server buttons
+            const serverDiv = document.getElementById('serverList');
+            serverDiv.innerHTML = '';
+            Object.keys(servers).forEach(key => {
+                const btn = document.createElement('button');
+                btn.textContent = servers[key].name;
+                btn.className = `server-btn ${key === currentServer ? 'active' : ''}`;
+                btn.onclick = () => {
+                    currentServer = key;
+                    document.querySelectorAll('.server-btn').forEach(b=>b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const activeEp = document.querySelector('.episode-card.active-ep');
+                    if (activeEp && activeEp.dataset.season && activeEp.dataset.episode) {
+                        playEpisode(parseInt(activeEp.dataset.season), parseInt(activeEp.dataset.episode));
+                    }
+                };
+                serverDiv.appendChild(btn);
+            });
+        } catch(e) {
+            console.error(e);
+            document.getElementById('info').innerHTML = '<div>Error loading series details.</div>';
+        }
     }
     
     async function loadEpisodes(season) {
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${season}?api_key=${API_KEY}`);
-        const data = await res.json();
         const cont = document.getElementById('episodesContainer');
-        cont.innerHTML = '';
-        data.episodes.forEach(ep => {
-            const card = document.createElement('div');
-            card.className = 'episode-card';
-            card.dataset.season = season;
-            card.dataset.episode = ep.episode_number;
-            card.innerHTML = `<span>E${ep.episode_number}</span><span>${ep.name}</span><i class="fas fa-play"></i>`;
-            card.onclick = () => {
-                document.querySelectorAll('.episode-card').forEach(c=>c.classList.remove('active-ep'));
-                card.classList.add('active-ep');
-                playEpisode(season, ep.episode_number);
-            };
-            cont.appendChild(card);
-        });
+        cont.innerHTML = '<div>Loading episodes...</div>';
+        try {
+            const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${season}?api_key=${API_KEY}`);
+            const data = await res.json();
+            cont.innerHTML = '';
+            if (!data.episodes || data.episodes.length === 0) {
+                cont.innerHTML = '<div>No episodes found.</div>';
+                return;
+            }
+            data.episodes.forEach(ep => {
+                const card = document.createElement('div');
+                card.className = 'episode-card';
+                card.dataset.season = season;
+                card.dataset.episode = ep.episode_number;
+                card.innerHTML = `<span>E${ep.episode_number}</span><span>${ep.name}</span><i class="fas fa-play"></i>`;
+                card.onclick = () => {
+                    document.querySelectorAll('.episode-card').forEach(c=>c.classList.remove('active-ep'));
+                    card.classList.add('active-ep');
+                    playEpisode(season, ep.episode_number);
+                };
+                cont.appendChild(card);
+            });
+        } catch(e) {
+            console.error(e);
+            cont.innerHTML = '<div>Error loading episodes.</div>';
+        }
     }
     
     function playEpisode(season, episode) {
