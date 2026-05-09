@@ -24,7 +24,6 @@ function saveFav() { localStorage.setItem('alb_favorites', JSON.stringify(favori
 function saveWatch() { localStorage.setItem('alb_watchlist', JSON.stringify(watchlist)); }
 function saveContinue() { localStorage.setItem('alb_continue', JSON.stringify(continueWatching)); }
 
-// Helper fetch
 async function fetchAPI(endpoint, params = {}) {
     const url = new URL(`${BASE}${endpoint}`);
     url.searchParams.append('api_key', API_KEY);
@@ -59,7 +58,7 @@ async function loadGenresModal() {
     });
 }
 
-// Load content (movies or tv)
+// Load content with proper sorting (top_rated = vote_average.desc)
 async function loadContent(reset = true) {
     if (isLoading) return;
     isLoading = true;
@@ -75,12 +74,13 @@ async function loadContent(reset = true) {
     if (isTurkishMode && currentType === 'tv') {
         endpoint = '/discover/tv';
         params.with_origin_country = 'TR';
-        params.sort_by = 'popularity.desc';
-        params['vote_count.gte'] = 10;
+        params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
+        if (currentSort === 'top_rated') params['vote_count.gte'] = 50;
     } 
     else if (currentQuery && currentQuery.length >= 3) {
         endpoint = `/search/${currentType}`;
         params.query = currentQuery;
+        // search results are sorted by popularity by default, but we can add sort
     } 
     else if (currentGenre) {
         endpoint = `/discover/${currentType}`;
@@ -96,9 +96,15 @@ async function loadContent(reset = true) {
         else if (currentStudio === 'HBO') params.with_networks = '49';
         else if (currentStudio === 'Apple') params.with_companies = '2';
         params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
+        if (currentSort === 'top_rated') params['vote_count.gte'] = 200;
     } 
     else {
-        endpoint = `/${currentType}/${currentSort === 'top_rated' ? 'top_rated' : 'popular'}`;
+        // Default: top_rated or popular
+        if (currentSort === 'top_rated') {
+            endpoint = `/${currentType}/top_rated`;
+        } else {
+            endpoint = `/${currentType}/popular`;
+        }
     }
     
     const data = await fetchAPI(endpoint, params);
@@ -109,7 +115,6 @@ async function loadContent(reset = true) {
     document.getElementById('loadMoreBtn').style.display = (currentPage < totalPages) ? 'block' : 'none';
 }
 
-// Display grid with favorite/watchlater icons and hover popup
 function displayGrid(items) {
     const grid = document.getElementById('moviesGrid');
     for (let item of items) {
@@ -141,7 +146,6 @@ function displayGrid(items) {
             </div>
         `;
         
-        // Favorite click
         const heart = card.querySelector('.fa-heart');
         heart.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -155,7 +159,6 @@ function displayGrid(items) {
             saveFav();
         });
         
-        // Watch later click
         const clock = card.querySelector('.fa-clock');
         clock.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -169,7 +172,6 @@ function displayGrid(items) {
             saveWatch();
         });
         
-        // Click card -> go to watch/tv page
         card.addEventListener('click', (e) => {
             if (e.target.tagName === 'I') return;
             incrementClick(id, currentType);
@@ -194,8 +196,9 @@ function displayGrid(items) {
     }
 }
 
-// Hover popup with trailer and description
 let trailerCache = {};
+let currentMuted = true;
+
 async function showHoverPopup(card, id, type, event) {
     const popup = document.getElementById('hoverPopup');
     if (!popup) return;
@@ -209,19 +212,41 @@ async function showHoverPopup(card, id, type, event) {
     }
     
     const title = card.dataset.title;
-    const overview = card.dataset.overview?.substring(0, 150) || 'No description';
+    const overview = card.dataset.overview || 'No description';
     const rating = card.dataset.rating;
     
     popup.innerHTML = `
-        <div>${trailerKey ? `<iframe src="https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>` : '<div style="height:120px; background:#000; display:flex; align-items:center; justify-content:center;">No trailer</div>'}</div>
+        <div style="position:relative;">
+            ${trailerKey ? `<iframe id="popupIframe" src="https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>` : '<div style="height:236px; background:#000; display:flex; align-items:center; justify-content:center;">No trailer</div>'}
+            ${trailerKey ? `<button class="unmute-btn" id="unmuteBtn">🔊 Unmute</button>` : ''}
+        </div>
         <div class="popup-title">${title}</div>
-        <div class="popup-desc">${overview}... <br>⭐ ${rating}/10</div>
+        <div class="popup-desc">${overview}<br>⭐ ${rating}/10</div>
     `;
     popup.style.display = 'block';
     
+    // Unmute button
+    if (trailerKey) {
+        const unmuteBtn = popup.querySelector('#unmuteBtn');
+        unmuteBtn.onclick = (e) => {
+            e.stopPropagation();
+            const iframe = popup.querySelector('#popupIframe');
+            if (iframe) {
+                if (currentMuted) {
+                    iframe.src = iframe.src.replace('mute=1', 'mute=0');
+                    unmuteBtn.textContent = '🔇 Mute';
+                } else {
+                    iframe.src = iframe.src.replace('mute=0', 'mute=1');
+                    unmuteBtn.textContent = '🔊 Unmute';
+                }
+                currentMuted = !currentMuted;
+            }
+        };
+    }
+    
     const updatePos = (e) => {
         popup.style.left = (e.clientX + 20) + 'px';
-        popup.style.top = (e.clientY - 100) + 'px';
+        popup.style.top = (e.clientY - 120) + 'px';
     };
     updatePos(event);
     card.addEventListener('mousemove', updatePos);
@@ -230,7 +255,6 @@ async function showHoverPopup(card, id, type, event) {
     });
 }
 
-// Slider (most clicked last 24h)
 async function renderSlider() {
     const stats = JSON.parse(localStorage.getItem('clickStats')) || {};
     const entries = Object.entries(stats).map(([key, val]) => ({ key, count: val.clicks?.filter(t => t > Date.now() - 86400000).length || 0 }));
@@ -285,11 +309,7 @@ function incrementClick(id, type) {
     localStorage.setItem('clickStats', stats);
 }
 
-// 100 Greatest loading
-let greatsMoviePage = 1;
-let greatsTvPage = 1;
-let greatsMovieTotal = 100;
-let greatsTvTotal = 100;
+let greatsMoviePage = 1, greatsTvPage = 1;
 let isLoadingGreats = false;
 
 async function loadGreatMovies(reset = true) {
@@ -334,7 +354,6 @@ function appendGreats(items, containerId, type) {
     });
 }
 
-// Infinite scroll for greats
 function initGreatsInfiniteScroll() {
     const movieSlider = document.getElementById('greatMoviesSlider');
     const tvSlider = document.getElementById('greatTvSlider');
@@ -354,7 +373,6 @@ function initGreatsInfiniteScroll() {
     }
 }
 
-// Turkish TV
 async function loadTurkishTV() {
     isTurkishMode = true;
     currentGenre = null;
@@ -370,7 +388,6 @@ async function loadTurkishTV() {
     });
 }
 
-// Slider drag
 function initSliderControls() {
     const track = document.querySelector('.slider-track');
     if (!track) return;
@@ -385,7 +402,6 @@ function initSliderControls() {
     if (nextBtn) nextBtn.onclick = () => { track.scrollBy({ left: 300, behavior: 'smooth' }); };
 }
 
-// Bind events
 function bindEvents() {
     document.querySelectorAll('.filter-tab').forEach(btn => {
         btn.onclick = () => {
@@ -538,7 +554,6 @@ function displayUserList(items) {
 
 function debounce(fn, delay) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); }; }
 
-// Initializers
 async function initIndexPage() {
     currentType = 'movie';
     await loadGenresModal();
