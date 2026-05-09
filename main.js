@@ -24,41 +24,47 @@ function saveFav() { localStorage.setItem('alb_favorites', JSON.stringify(favori
 function saveWatch() { localStorage.setItem('alb_watchlist', JSON.stringify(watchlist)); }
 function saveContinue() { localStorage.setItem('alb_continue', JSON.stringify(continueWatching)); }
 
+// Helper fetch
 async function fetchAPI(endpoint, params = {}) {
     const url = new URL(`${BASE}${endpoint}`);
     url.searchParams.append('api_key', API_KEY);
     Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
     const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
 }
 
 // Load genres for modal
 async function loadGenresModal() {
-    const movieGenres = await fetchAPI('/genre/movie/list');
-    const tvGenres = await fetchAPI('/genre/tv/list');
-    const all = [...movieGenres.genres, ...tvGenres.genres];
-    const unique = new Map();
-    all.forEach(g => { if (!unique.has(g.id)) unique.set(g.id, g); });
-    const container = document.getElementById('genreGrid');
-    if (!container) return;
-    container.innerHTML = '';
-    unique.forEach(genre => {
-        const btn = document.createElement('button');
-        btn.textContent = genre.name;
-        btn.onclick = () => {
-            currentGenre = genre.id;
-            currentStudio = null;
-            currentQuery = '';
-            isTurkishMode = false;
-            currentPage = 1;
-            loadContent(true);
-            document.getElementById('genreModal').style.display = 'none';
-        };
-        container.appendChild(btn);
-    });
+    try {
+        const movieGenres = await fetchAPI('/genre/movie/list');
+        const tvGenres = await fetchAPI('/genre/tv/list');
+        const all = [...movieGenres.genres, ...tvGenres.genres];
+        const unique = new Map();
+        all.forEach(g => { if (!unique.has(g.id)) unique.set(g.id, g); });
+        const container = document.getElementById('genreGrid');
+        if (!container) return;
+        container.innerHTML = '';
+        unique.forEach(genre => {
+            const btn = document.createElement('button');
+            btn.textContent = genre.name;
+            btn.onclick = () => {
+                currentGenre = genre.id;
+                currentStudio = null;
+                currentQuery = '';
+                isTurkishMode = false;
+                currentPage = 1;
+                loadContent(true);
+                document.getElementById('genreModal').style.display = 'none';
+            };
+            container.appendChild(btn);
+        });
+    } catch(e) {
+        console.error('Error loading genres:', e);
+    }
 }
 
-// Load content with proper sorting (top_rated = vote_average.desc)
+// Load content
 async function loadContent(reset = true) {
     if (isLoading) return;
     isLoading = true;
@@ -71,45 +77,48 @@ async function loadContent(reset = true) {
     let endpoint = '';
     let params = { page: currentPage };
     
-    if (isTurkishMode && currentType === 'tv') {
-        endpoint = '/discover/tv';
-        params.with_origin_country = 'TR';
-        params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
-        if (currentSort === 'top_rated') params['vote_count.gte'] = 50;
-    } 
-    else if (currentQuery && currentQuery.length >= 3) {
-        endpoint = `/search/${currentType}`;
-        params.query = currentQuery;
-        // search results are sorted by popularity by default, but we can add sort
-    } 
-    else if (currentGenre) {
-        endpoint = `/discover/${currentType}`;
-        params.with_genres = currentGenre;
-        params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
-        if (currentSort === 'top_rated') params['vote_count.gte'] = 200;
-    } 
-    else if (currentStudio) {
-        endpoint = `/discover/${currentType}`;
-        if (currentStudio === 'Netflix') params.with_networks = '213';
-        else if (currentStudio === 'Prime') params.with_companies = '174';
-        else if (currentStudio === 'Disney') params.with_companies = '2739';
-        else if (currentStudio === 'HBO') params.with_networks = '49';
-        else if (currentStudio === 'Apple') params.with_companies = '2';
-        params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
-        if (currentSort === 'top_rated') params['vote_count.gte'] = 200;
-    } 
-    else {
-        // Default: top_rated or popular
-        if (currentSort === 'top_rated') {
-            endpoint = `/${currentType}/top_rated`;
-        } else {
-            endpoint = `/${currentType}/popular`;
+    try {
+        if (isTurkishMode && currentType === 'tv') {
+            endpoint = '/discover/tv';
+            params.with_origin_country = 'TR';
+            params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
+            if (currentSort === 'top_rated') params['vote_count.gte'] = 50;
+        } 
+        else if (currentQuery && currentQuery.length >= 3) {
+            endpoint = `/search/${currentType}`;
+            params.query = currentQuery;
+        } 
+        else if (currentGenre) {
+            endpoint = `/discover/${currentType}`;
+            params.with_genres = currentGenre;
+            params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
+            if (currentSort === 'top_rated') params['vote_count.gte'] = 200;
+        } 
+        else if (currentStudio) {
+            endpoint = `/discover/${currentType}`;
+            if (currentStudio === 'Netflix') params.with_networks = '213';
+            else if (currentStudio === 'Prime') params.with_companies = '174';
+            else if (currentStudio === 'Disney') params.with_companies = '2739';
+            else if (currentStudio === 'HBO') params.with_networks = '49';
+            else if (currentStudio === 'Apple') params.with_companies = '2';
+            params.sort_by = currentSort === 'top_rated' ? 'vote_average.desc' : 'popularity.desc';
+            if (currentSort === 'top_rated') params['vote_count.gte'] = 200;
+        } 
+        else {
+            if (currentSort === 'top_rated') {
+                endpoint = `/${currentType}/top_rated`;
+            } else {
+                endpoint = `/${currentType}/popular`;
+            }
         }
+        
+        const data = await fetchAPI(endpoint, params);
+        totalPages = Math.min(data.total_pages, 200);
+        displayGrid(data.results);
+    } catch(e) {
+        console.error('Error loading content:', e);
+        document.getElementById('moviesGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px;">Error loading movies. Check API key or network.</div>';
     }
-    
-    const data = await fetchAPI(endpoint, params);
-    totalPages = Math.min(data.total_pages, 200);
-    displayGrid(data.results);
     isLoading = false;
     document.getElementById('loader').style.display = 'none';
     document.getElementById('loadMoreBtn').style.display = (currentPage < totalPages) ? 'block' : 'none';
@@ -117,6 +126,10 @@ async function loadContent(reset = true) {
 
 function displayGrid(items) {
     const grid = document.getElementById('moviesGrid');
+    if (!items.length) {
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px;">No results found.</div>';
+        return;
+    }
     for (let item of items) {
         const id = item.id;
         const title = item.title || item.name;
@@ -205,10 +218,12 @@ async function showHoverPopup(card, id, type, event) {
     
     let trailerKey = trailerCache[`${type}_${id}`];
     if (!trailerKey) {
-        const trailData = await fetchAPI(`/${type}/${id}/videos`);
-        const trailer = trailData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
-        trailerKey = trailer ? trailer.key : null;
-        trailerCache[`${type}_${id}`] = trailerKey;
+        try {
+            const trailData = await fetchAPI(`/${type}/${id}/videos`);
+            const trailer = trailData.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+            trailerKey = trailer ? trailer.key : null;
+            trailerCache[`${type}_${id}`] = trailerKey;
+        } catch(e) { trailerKey = null; }
     }
     
     const title = card.dataset.title;
@@ -217,7 +232,7 @@ async function showHoverPopup(card, id, type, event) {
     
     popup.innerHTML = `
         <div style="position:relative;">
-            ${trailerKey ? `<iframe id="popupIframe" src="https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>` : '<div style="height:236px; background:#000; display:flex; align-items:center; justify-content:center;">No trailer</div>'}
+            ${trailerKey ? `<iframe id="popupIframe" src="https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1" frameborder="0" allow="autoplay; encrypted-media"></iframe>` : '<div style="height:225px; background:#000; display:flex; align-items:center; justify-content:center;">No trailer</div>'}
             ${trailerKey ? `<button class="unmute-btn" id="unmuteBtn">🔊 Unmute</button>` : ''}
         </div>
         <div class="popup-title">${title}</div>
@@ -225,21 +240,15 @@ async function showHoverPopup(card, id, type, event) {
     `;
     popup.style.display = 'block';
     
-    // Unmute button
     if (trailerKey) {
         const unmuteBtn = popup.querySelector('#unmuteBtn');
         unmuteBtn.onclick = (e) => {
             e.stopPropagation();
             const iframe = popup.querySelector('#popupIframe');
             if (iframe) {
-                if (currentMuted) {
-                    iframe.src = iframe.src.replace('mute=1', 'mute=0');
-                    unmuteBtn.textContent = '🔇 Mute';
-                } else {
-                    iframe.src = iframe.src.replace('mute=0', 'mute=1');
-                    unmuteBtn.textContent = '🔊 Unmute';
-                }
                 currentMuted = !currentMuted;
+                iframe.src = `https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=${currentMuted ? 1 : 0}`;
+                unmuteBtn.textContent = currentMuted ? '🔊 Unmute' : '🔇 Mute';
             }
         };
     }
@@ -265,37 +274,41 @@ async function renderSlider() {
     track.innerHTML = '';
     for (let entry of top6) {
         const [type, id] = entry.key.split('_');
-        const data = await fetchAPI(`/${type}/${id}`);
-        if (data && data.poster_path) {
-            const card = document.createElement('div');
-            card.className = 'slider-card';
-            card.innerHTML = `
-                <img src="${IMG + data.poster_path}" loading="lazy">
-                <div class="slider-info">
-                    <h4>${data.title || data.name}</h4>
-                    <p>${(data.overview || '').substring(0, 80)}...</p>
-                </div>
-            `;
-            card.onclick = () => {
-                if (type === 'movie') location.href = `watch.html?id=${id}&type=movie`;
-                else location.href = `tv.html?id=${id}`;
-            };
-            track.appendChild(card);
-        }
+        try {
+            const data = await fetchAPI(`/${type}/${id}`);
+            if (data && data.poster_path) {
+                const card = document.createElement('div');
+                card.className = 'slider-card';
+                card.innerHTML = `
+                    <img src="${IMG + data.poster_path}" loading="lazy">
+                    <div class="slider-info">
+                        <h4>${data.title || data.name}</h4>
+                        <p>${(data.overview || '').substring(0, 80)}...</p>
+                    </div>
+                `;
+                card.onclick = () => {
+                    if (type === 'movie') location.href = `watch.html?id=${id}&type=movie`;
+                    else location.href = `tv.html?id=${id}`;
+                };
+                track.appendChild(card);
+            }
+        } catch(e) {}
     }
     if (top6.length < 6) {
-        const fallback = await fetchAPI(`/${currentType}/popular`, { page: 1 });
-        for (let i = 0; i < 6 - top6.length && i < fallback.results.length; i++) {
-            const item = fallback.results[i];
-            const card = document.createElement('div');
-            card.className = 'slider-card';
-            card.innerHTML = `<img src="${IMG + item.poster_path}"><div class="slider-info"><h4>${item.title || item.name}</h4><p>${(item.overview || '').substring(0,80)}...</p></div>`;
-            card.onclick = () => {
-                if (currentType === 'movie') location.href = `watch.html?id=${item.id}&type=movie`;
-                else location.href = `tv.html?id=${item.id}`;
-            };
-            track.appendChild(card);
-        }
+        try {
+            const fallback = await fetchAPI(`/${currentType}/popular`, { page: 1 });
+            for (let i = 0; i < 6 - top6.length && i < fallback.results.length; i++) {
+                const item = fallback.results[i];
+                const card = document.createElement('div');
+                card.className = 'slider-card';
+                card.innerHTML = `<img src="${IMG + item.poster_path}"><div class="slider-info"><h4>${item.title || item.name}</h4><p>${(item.overview || '').substring(0,80)}...</p></div>`;
+                card.onclick = () => {
+                    if (currentType === 'movie') location.href = `watch.html?id=${item.id}&type=movie`;
+                    else location.href = `tv.html?id=${item.id}`;
+                };
+                track.appendChild(card);
+            }
+        } catch(e) {}
     }
 }
 
@@ -319,9 +332,11 @@ async function loadGreatMovies(reset = true) {
         greatsMoviePage = 1;
         document.getElementById('greatMoviesSlider').innerHTML = '';
     }
-    const data = await fetchAPI('/movie/top_rated', { page: greatsMoviePage });
-    appendGreats(data.results, 'greatMoviesSlider', 'movie');
-    greatsMoviePage++;
+    try {
+        const data = await fetchAPI('/movie/top_rated', { page: greatsMoviePage });
+        appendGreats(data.results, 'greatMoviesSlider', 'movie');
+        greatsMoviePage++;
+    } catch(e) {}
     isLoadingGreats = false;
 }
 
@@ -332,15 +347,19 @@ async function loadGreatTv(reset = true) {
         greatsTvPage = 1;
         document.getElementById('greatTvSlider').innerHTML = '';
     }
-    const data = await fetchAPI('/tv/top_rated', { page: greatsTvPage });
-    appendGreats(data.results, 'greatTvSlider', 'tv');
-    greatsTvPage++;
+    try {
+        const data = await fetchAPI('/tv/top_rated', { page: greatsTvPage });
+        appendGreats(data.results, 'greatTvSlider', 'tv');
+        greatsTvPage++;
+    } catch(e) {}
     isLoadingGreats = false;
 }
 
 function appendGreats(items, containerId, type) {
     const container = document.getElementById(containerId);
+    if (!container) return;
     items.forEach(item => {
+        if (!item.poster_path) return;
         const card = document.createElement('div');
         card.className = 'great-card';
         card.dataset.id = item.id;
@@ -381,7 +400,8 @@ async function loadTurkishTV() {
     currentType = 'tv';
     currentPage = 1;
     await loadContent(true);
-    document.getElementById('sectionTitle').innerHTML = 'Turkish TV Series <i class="fas fa-flag-turkey"></i>';
+    const titleEl = document.getElementById('sectionTitle');
+    if (titleEl) titleEl.innerHTML = 'Turkish TV Series <i class="fas fa-flag-turkey"></i>';
     document.querySelectorAll('.filter-tab').forEach(btn => {
         if (btn.dataset.type === 'tv') btn.classList.add('active');
         else btn.classList.remove('active');
@@ -539,6 +559,10 @@ function bindEvents() {
 function displayUserList(items) {
     const grid = document.getElementById('moviesGrid');
     grid.innerHTML = '';
+    if (!items.length) {
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px;">No items in this list.</div>';
+        return;
+    }
     items.forEach(item => {
         const card = document.createElement('div');
         card.className = 'movie-card';
